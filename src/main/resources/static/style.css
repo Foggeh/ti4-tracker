@@ -10,6 +10,18 @@
   --warn: #f0883e;
   --radius: 10px;
 
+  /* Card scans are portrait 500x750. These crop the display down to just the
+     requirement panel -- see .obj-card img. Retune here if scans change.
+
+     Measured off the scans: title band ends ~21%, the victory-point circle
+     starts ~77%. Keeping 26%-73% clears both with margin, and holds even for
+     the longest four-line requirements (Rule Distant Lands, Achieve Supremacy).
+
+     ratio 1.42 = 500 / (750 * 0.47), the visible slice.
+     focus 49%  = 26 / (100 - 47), where object-position puts that slice. */
+  --card-crop-ratio: 1.42;
+  --card-crop-focus: 49%;
+
   --p-blue: #3f7fd0;
   --p-green: #3f9e5a;
   --p-red: #cf4a3e;
@@ -145,13 +157,19 @@ main { padding: 18px; max-width: 1100px; margin: 0 auto; display: grid; gap: 18p
   flex-direction: column;
 }
 
-/* No fixed aspect ratio and no cropping: the scans are portrait 2:3, and the
-   whole point is to read the card. Letting them size naturally also means
-   replacing them with differently-shaped scans needs no CSS change. */
+/* Show only the requirement panel of the card: the title band above it and the
+   victory-point circle below are both already in the badge next to the name.
+   Done with object-fit rather than by editing the files, so the scans stay
+   whole and this is one number to retune.
+
+   --card-crop-ratio  width/height of the visible slice; larger = shorter strip
+   --card-crop-focus  which vertical band of the card to show; larger = lower */
 .obj-card img {
   width: 100%;
-  height: auto;
   display: block;
+  aspect-ratio: var(--card-crop-ratio);
+  object-fit: cover;
+  object-position: center var(--card-crop-focus);
   background: #0a0e13;
 }
 
