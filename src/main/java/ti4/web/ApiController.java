@@ -1,7 +1,12 @@
 package ti4.web;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,8 +25,10 @@ import ti4.domain.Player;
 import ti4.domain.PlayerState;
 import ti4.domain.RevealedObjective;
 import ti4.FactionCatalogue;
+import ti4.PointSourceCatalogue;
 import ti4.ImageResolver;
 import ti4.domain.Faction;
+import ti4.domain.PointSource;
 import ti4.repo.CatalogueRepository;
 import ti4.repo.GameRepository;
 
@@ -36,19 +43,44 @@ public class ApiController {
     private final CatalogueRepository catalogue;
     private final ImageResolver images;
     private final FactionCatalogue factions;
+    private final PointSourceCatalogue pointSources;
 
     public ApiController(GameRepository games, CatalogueRepository catalogue,
-                         ImageResolver images, FactionCatalogue factions) {
+                         ImageResolver images, FactionCatalogue factions,
+                         PointSourceCatalogue pointSources) {
         this.games = games;
         this.catalogue = catalogue;
         this.images = images;
         this.factions = factions;
+        this.pointSources = pointSources;
     }
 
     /** Reference data for the add-player dropdown. */
     @GetMapping("/factions")
     public List<Faction> factions() {
         return factions.all();
+    }
+
+    /**
+     * Options for the Add-points Label dropdown: the seeded list plus every
+     * label already used in a game, so the list grows with use.
+     */
+    @GetMapping("/point-sources")
+    public List<PointSource> pointSources() {
+        List<PointSource> seeded = pointSources.all();
+        Set<String> known = seeded.stream()
+                .map(s -> s.name().toLowerCase(Locale.ROOT))
+                .collect(Collectors.toCollection(HashSet::new));
+
+        List<PointSource> result = new ArrayList<>(seeded);
+        for (String kind : List.of("secret", "other")) {
+            for (String label : games.usedLabels(kind)) {
+                if (known.add(label.toLowerCase(Locale.ROOT))) {
+                    result.add(new PointSource(kind, 1, label, true));
+                }
+            }
+        }
+        return result;
     }
 
     /**

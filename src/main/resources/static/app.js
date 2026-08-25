@@ -46,6 +46,14 @@ const LAST_GAME_KEY = 'ti4.lastGame';
 let gameId = null;
 let state = null;
 let catalogue = [];
+let pointSources = [];
+
+/**
+ * Sentinel option value meaning "let me type a label that is not listed".
+ * Deliberately not whitespace: a space here was mangled into a NUL byte once,
+ * and a value that looks like a space is impossible to spot when it breaks.
+ */
+const CUSTOM_LABEL = '__custom__';
 
 const el = (id) => document.getElementById(id);
 
@@ -55,6 +63,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   wireUp();
   try {
     catalogue = await api.get('/api/objectives');
+    pointSources = await api.get('/api/point-sources');
     await loadFactions();
     await loadGames();
   } catch (e) {
@@ -393,6 +402,8 @@ function wireUp() {
 
   onDialogOk('addPointsDlg', 'addPointsForm', async (v) => {
     await api.post('/api/points', { ...v, gameId });
+    // Re-read so a label just typed is offered next time without a reload.
+    pointSources = await api.get('/api/point-sources');
     await refresh();
   });
 
@@ -432,8 +443,12 @@ function wireUp() {
     el('addCardForm').elements.points.value = e.target.value === 'II' ? 2 : 1;
   });
 
-  el('pointsKind').addEventListener('change', updatePointsDialog);
+  el('pointsKind').addEventListener('change', () => {
+    fillLabelOptions();
+    updatePointsDialog();
+  });
   el('pointsPlayer').addEventListener('change', updatePointsDialog);
+  el('pointsLabelSelect').addEventListener('change', onLabelChoice);
 }
 
 /**
@@ -507,8 +522,79 @@ function openPointsDialog() {
     opt.textContent = p.name;
     select.append(opt);
   }
+  fillLabelOptions();
   updatePointsDialog();
   el('addPointsDlg').showModal();
+}
+
+/**
+ * Rebuilds the Label dropdown for the currently selected Kind.
+ *
+ * Seeded options and ones learned from previous games are grouped separately, so
+ * it is clear which came from the card list and which the app picked up from use.
+ */
+function fillLabelOptions() {
+  const kind = el('pointsKind').value;
+  const select = el('pointsLabelSelect');
+  const custom = el('pointsLabel');
+  select.innerHTML = '';
+
+  const forKind = pointSources.filter((s) => s.kind === kind);
+  const seeded = forKind.filter((s) => !s.learned);
+  const learned = forKind.filter((s) => s.learned);
+
+  const blank = document.createElement('option');
+  blank.value = '';
+  blank.textContent = forKind.length ? '— pick one —' : '— nothing listed yet —';
+  select.append(blank);
+
+  const addGroup = (label, items) => {
+    if (!items.length) return;
+    const group = document.createElement('optgroup');
+    group.label = label;
+    for (const s of items) {
+      const opt = document.createElement('option');
+      opt.value = s.name;
+      opt.textContent = s.name;
+      opt.dataset.points = s.points;
+      group.append(opt);
+    }
+    select.append(group);
+  };
+
+  addGroup(kind === 'secret' ? 'Secret objectives' : 'Point sources', seeded);
+  addGroup('Used before', learned);
+
+  const other = document.createElement('option');
+  other.value = CUSTOM_LABEL;
+  other.textContent = '— something else —';
+  select.append(other);
+
+  select.value = '';
+  custom.value = '';
+  custom.hidden = true;
+}
+
+/** Mirrors the chosen option into the submitted field, or opens it for typing. */
+function onLabelChoice() {
+  const select = el('pointsLabelSelect');
+  const custom = el('pointsLabel');
+
+  if (select.value === CUSTOM_LABEL) {
+    custom.hidden = false;
+    custom.value = '';
+    custom.focus();
+    return;
+  }
+
+  custom.hidden = true;
+  custom.value = select.value;
+
+  // Most sources have a usual value; prefill it but leave it editable.
+  const chosen = select.selectedOptions[0];
+  if (chosen && chosen.dataset.points) {
+    el('addPointsForm').elements.points.value = chosen.dataset.points;
+  }
 }
 
 /**

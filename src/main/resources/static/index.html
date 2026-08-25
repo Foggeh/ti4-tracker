@@ -176,7 +176,12 @@
     </label>
     <label>Points<input name="points" type="number" value="1" required></label>
     <label>Label
-      <input name="label" id="pointsLabel" placeholder="Become a Martyr">
+      <select id="pointsLabelSelect">
+        <option value="">— pick one —</option>
+      </select>
+      <!-- Carries the submitted value at all times; the select writes into it.
+           Shown for typing only when "something else" is chosen. -->
+      <input name="label" id="pointsLabel" hidden placeholder="Type the card name">
       <small class="muted">What earned it, so the total is explainable later.</small>
     </label>
     <p id="secretWarning" class="warning" hidden></p>

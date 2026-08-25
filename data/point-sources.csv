@@ -1,0 +1,39 @@
+# Options for the Label dropdown in "Add points", split by kind.
+#
+# Columns: kind,points,name
+# kind:   secret | other
+# points: the usual value, prefilled when picked. Still editable.
+#
+# The dropdown also learns: any label you type via "— something else —" is
+# remembered and appears here-on-in for that kind, so this file does not have to
+# be complete to be useful. Read at startup, no recompile.
+#
+kind,points,name
+#
+# --- Other point sources -------------------------------------------------------
+# Base + Prophecy of Kings. Thunder's Edge may add sources not listed here.
+other,1,Custodians token
+other,1,Imperial (control Mecatol Rex)
+other,1,Support for the Throne
+other,1,Shard of the Throne
+other,1,The Crown of Emphidia
+other,1,Political Censure
+other,1,Seed of an Empire
+other,1,Holy Planet of Ise
+other,1,Mutiny (voted for)
+other,-1,Mutiny (voted against)
+other,1,Manual adjustment
+#
+# --- Secret objectives ---------------------------------------------------------
+# Deliberately empty. There are 40+ secret objective cards and I could not find
+# a source I trusted for their exact names, so drafting them from memory would
+# have put invented card names in your dropdown -- the same call as with the
+# Thunder's Edge objectives.
+#
+# Two ways to fill it, both fine:
+#   1. Play on. Pick "— something else —" and type the card name when you score
+#      it. It is remembered and appears in the dropdown from then on. After a
+#      couple of games the list is yours and accurate.
+#   2. Paste me the list, or add rows here directly:
+#        secret,1,Become a Martyr
+#

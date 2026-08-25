@@ -283,6 +283,26 @@ public class GameRepository {
                 .list();
     }
 
+    /**
+     * Labels already used for manual entries of this kind, across every game.
+     *
+     * <p>This is what makes the Label dropdown self-populating: a card name typed
+     * once is offered from then on, so the seed file never has to be complete.
+     */
+    public List<String> usedLabels(String kind) {
+        return jdbc.sql("""
+                        SELECT DISTINCT label
+                          FROM score
+                         WHERE kind = :kind
+                           AND label IS NOT NULL
+                           AND TRIM(label) <> ''
+                         ORDER BY label COLLATE NOCASE
+                        """)
+                .param("kind", kind)
+                .query(String.class)
+                .list();
+    }
+
     /** Player id to total VP. Totals are always derived, never stored. */
     public Map<Long, Integer> totals(long gameId) {
         Map<Long, Integer> result = new LinkedHashMap<>();
