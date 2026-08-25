@@ -78,12 +78,20 @@ machine. `.gitignore` keeps them local.
 
 ## Running it
 
+Easiest is the green run arrow on `Ti4TrackerApplication` in IntelliJ, or the
+Maven panel's `spring-boot:run`.
+
+From a terminal, there is no `mvn` on PATH -- IntelliJ's bundled Maven 3.9.16 is
+used instead:
+
 ```
-mvn spring-boot:run
+set "JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.2.13-hotspot"
+"C:\Program Files\JetBrains\IntelliJ IDEA 2026.2.1\plugins\maven-plugin\lib\maven3\bin\mvn.cmd" spring-boot:run
 ```
 
-Then open <http://localhost:8080>. For other devices at the table, use the
-laptop's LAN address, e.g. `http://192.168.1.20:8080`.
+Then open <http://localhost:8080>. Other devices at the table use the laptop's
+LAN address -- currently `http://192.168.100.9:8080`. Windows Firewall may need
+to allow inbound 8080 the first time another device connects.
 
 ## Layout
 
@@ -138,10 +146,17 @@ Responses are JSON. Request bodies are `application/x-www-form-urlencoded`.
   outcomes like Shard of the Throne, relics like the Crown of Emphidia — go
   through the same manual entry with a label
 
+## Verified
+
+Compiled and run on 2026-08-25. Checked end to end: seeding (40 cards), game and
+player creation, revealing, scoring, toggling a claim off, manual entries,
+totals, and the browser UI updating live. Error paths return real messages
+(400 bad stage, 409 duplicate name, 404 unknown game, 400 missing parameter).
+Data survives a restart.
+
 ## Not done yet
 
-- Never compiled or run. Written, not verified.
-- No tests.
+- No tests. Everything above was verified by hand, which is not the same thing.
 - No image upload through the browser; you copy files into `data/images/`
   yourself and type the filename.
 - No "who is winning on tiebreak" logic (TI4 breaks ties by initiative order).
