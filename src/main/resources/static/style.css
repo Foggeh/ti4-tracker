@@ -416,6 +416,13 @@ dialog menu {
   gap: 12px;
   padding: 14px;
   align-content: start;
+
+  /* Must be max-content, not the default auto. The card images are width:100%,
+     and a percentage width contributes nothing during intrinsic row sizing, so
+     auto rows measured the text only -- every card was clipped to a ~60px sliver
+     with the image hidden by overflow. Confirmed by experiment: forcing a reflow
+     changed nothing, switching to max-content fixed it immediately. */
+  grid-auto-rows: max-content;
 }
 
 .gcard {
@@ -426,8 +433,20 @@ dialog menu {
 }
 
 /* Whole card here, deliberately uncropped: the crop on the board view exists to
-   save vertical space, but a gallery is for reading the card. */
-.gcard img { width: 100%; height: auto; display: block; background: #0a0e13; }
+   save vertical space, but a gallery is for reading the card.
+
+   aspect-ratio reserves the height before the image arrives. Without it each
+   cell collapsed to its text, and there was no laid-out box for lazy loading to
+   intersect, so the images never loaded at all. contain rather than cover so a
+   scan with different proportions letterboxes instead of being cropped. */
+.gcard img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  background: #0a0e13;
+}
 
 .gcard-body { padding: 8px 10px; }
 .gcard-name { font-size: 13px; font-weight: 600; }

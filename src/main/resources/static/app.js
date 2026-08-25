@@ -358,8 +358,10 @@ let galleryKind = 'public';
 function openGallery(kind) {
   galleryKind = kind;
   el('galleryFilter').value = '';
-  renderGallery();
+  // Open first, populate second, so the grid is laid out while visible and
+  // images resolve against a real column width.
   el('galleryDlg').showModal();
+  renderGallery();
 }
 
 function renderGallery() {
@@ -404,9 +406,11 @@ function renderGallery() {
   for (const item of shown) {
     const cell = document.createElement('div');
     cell.className = 'gcard';
+    // No loading="lazy" on purpose. Inside a dialog that was display:none the
+    // browser treats these as not visible and never loads them, leaving a grid
+    // of empty cards. 40-odd cached images off localhost is not worth the risk.
     const picture = item.image
-      ? `<img src="/images/${encodeURIComponent(item.image)}" alt="${escapeHtml(item.name)}"
-              loading="lazy">`
+      ? `<img src="/images/${encodeURIComponent(item.image)}" alt="${escapeHtml(item.name)}">`
       : `<div class="gcard-noimage">no scan yet</div>`;
     cell.innerHTML = `
       ${picture}
