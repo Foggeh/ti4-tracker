@@ -356,6 +356,69 @@ function attachPreview(target, card) {
   });
 }
 
+// --- history ----------------------------------------------------------------
+
+let auditEntries = [];
+
+/** Actions that took something away, highlighted so they are scannable. */
+const DESTRUCTIVE = new Set([
+  'player.remove',
+  'objective.unreveal',
+  'points.remove',
+  'score.remove',
+]);
+
+async function openHistory() {
+  await loadHistory();
+  el('historyDlg').showModal();
+  renderHistory();
+}
+
+async function loadHistory() {
+  const thisGameOnly = el('historyThisGame').checked;
+  const query = thisGameOnly && gameId ? `?game=${gameId}&limit=500` : '?limit=500';
+  auditEntries = await api.get('/api/audit' + query);
+}
+
+function renderHistory() {
+  const filter = el('historyFilter').value.trim().toLowerCase();
+  const host = el('historyList');
+  host.innerHTML = '';
+
+  const shown = auditEntries.filter(
+    (e) =>
+      !filter ||
+      `${e.action} ${e.detail || ''} ${e.actor || ''}`.toLowerCase().includes(filter)
+  );
+
+  const destructive = shown.filter((e) => DESTRUCTIVE.has(e.action)).length;
+  el('historyCount').textContent =
+    `${shown.length} entr${shown.length === 1 ? 'y' : 'ies'}` +
+    (destructive ? ` · ${destructive} removed something` : '');
+
+  for (const e of shown) {
+    const row = document.createElement('div');
+    row.className = 'hrow' + (DESTRUCTIVE.has(e.action) ? ' destructive' : '');
+    row.innerHTML = `
+      <span class="hrow-when">${escapeHtml(formatWhen(e.createdAt))}</span>
+      <span class="hrow-action">${escapeHtml(e.action)}</span>
+      <span class="hrow-detail">${escapeHtml(e.detail || '')}</span>
+      <span class="hrow-actor">${escapeHtml(e.actor || '')}</span>`;
+    host.append(row);
+  }
+
+  el('historyEmpty').hidden = shown.length > 0;
+}
+
+/** Stored as UTC ISO; shown in the reader's own timezone. */
+function formatWhen(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const today = new Date().toDateString() === d.toDateString();
+  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return today ? time : `${d.toLocaleDateString([], { day: '2-digit', month: 'short' })} ${time}`;
+}
+
 let galleryKind = 'public';
 
 function openGallery(kind) {
@@ -651,6 +714,16 @@ function wireUp() {
   });
   el('galleryFilter').addEventListener('input', renderGallery);
   el('galleryClose').addEventListener('click', () => el('galleryDlg').close());
+
+  el('historyBtn').addEventListener('click', () => guard(openHistory));
+  el('historyFilter').addEventListener('input', renderHistory);
+  el('historyThisGame').addEventListener('change', () =>
+    guard(async () => {
+      await loadHistory();
+      renderHistory();
+    })
+  );
+  el('historyClose').addEventListener('click', () => el('historyDlg').close());
 
   // A preview left showing after a scroll or a click elsewhere looks stuck.
   window.addEventListener('scroll', hidePreview, { passive: true });

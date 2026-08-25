@@ -36,6 +36,13 @@ public class CatalogueRepository {
                 .list();
     }
 
+    public Optional<Objective> byId(long id) {
+        return jdbc.sql(SELECT + " WHERE id = :id")
+                .param("id", id)
+                .query(Objective.class)
+                .optional();
+    }
+
     public Optional<Objective> byName(String name) {
         return jdbc.sql(SELECT + " WHERE name = :name")
                 .param("name", name)

@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,7 +30,10 @@ import ti4.FactionCatalogue;
 import ti4.PointSourceCatalogue;
 import ti4.ImageResolver;
 import ti4.domain.Faction;
+import ti4.domain.AuditEntry;
 import ti4.domain.PointSource;
+import ti4.domain.ScoreSummary;
+import ti4.repo.AuditRepository;
 import ti4.repo.CatalogueRepository;
 import ti4.repo.GameRepository;
 
@@ -44,15 +49,58 @@ public class ApiController {
     private final ImageResolver images;
     private final FactionCatalogue factions;
     private final PointSourceCatalogue pointSources;
+    private final AuditRepository audit;
+
+    /**
+     * A Spring-provided request-scoped proxy, so the audit helper can name the
+     * calling device without threading it through nine method signatures.
+     */
+    private final HttpServletRequest request;
 
     public ApiController(GameRepository games, CatalogueRepository catalogue,
                          ImageResolver images, FactionCatalogue factions,
-                         PointSourceCatalogue pointSources) {
+                         PointSourceCatalogue pointSources, AuditRepository audit,
+                         HttpServletRequest request) {
         this.games = games;
         this.catalogue = catalogue;
         this.images = images;
         this.factions = factions;
         this.pointSources = pointSources;
+        this.audit = audit;
+        this.request = request;
+    }
+
+    /** There is no login, so the device address is the only identity available. */
+    private void log(Long gameId, String action, String detail) {
+        audit.record(gameId, action, detail, actor());
+    }
+
+    /**
+     * Loopback comes back as "0:0:0:0:0:0:0:1" or "127.0.0.1", which tells a
+     * reader nothing. Anything else is a real device on the wifi and is shown
+     * as-is, which is what distinguishes one phone at the table from another.
+     */
+    private String actor() {
+        String address = request.getRemoteAddr();
+        if (address == null || address.isBlank()) {
+            return "unknown";
+        }
+        return switch (address) {
+            case "::1", "0:0:0:0:0:0:0:1", "127.0.0.1" -> "game laptop";
+            default -> address;
+        };
+    }
+
+    private String objectiveName(long objectiveId) {
+        return catalogue.byId(objectiveId).map(Objective::name)
+                .orElse("objective " + objectiveId);
+    }
+
+    @GetMapping("/audit")
+    public List<AuditEntry> auditTrail(
+            @RequestParam(required = false) Long game,
+            @RequestParam(defaultValue = "300") int limit) {
+        return audit.recent(game, Math.min(Math.max(limit, 1), 2000));
     }
 
     /** Reference data for the add-player dropdown. */
@@ -133,6 +181,7 @@ public class ApiController {
             @RequestParam(defaultValue = "10") int vpTarget,
             @RequestParam(defaultValue = "3") int maxSecrets) {
         long id = games.createGame(name, vpTarget, maxSecrets);
+        log(id, "game.create", "Created game '" + name + "' to " + vpTarget + " VP");
         return Map.of("id", id);
     }
 
@@ -198,12 +247,15 @@ public class ApiController {
                     HttpStatus.CONFLICT, "An objective named '" + name + "' already exists");
         }
         long id = catalogue.insert(name, stage, points, requirement, expansion, image);
+        log(null, "objective.create", "Added card '" + name + "' (stage " + stage
+                + ", " + points + " VP, " + expansion + ")");
         return Map.of("id", id);
     }
 
     @PostMapping("/objectives/image")
     public Map<String, Object> setImage(@RequestParam long id, @RequestParam String image) {
         catalogue.setImage(id, image);
+        log(null, "objective.image", "Set image for " + objectiveName(id) + " to " + image);
         return Map.of("ok", true);
     }
 
@@ -229,6 +281,9 @@ public class ApiController {
                     "Another player is already " + color + " in this game.");
         }
         long id = games.addPlayer(gameId, name, faction, color);
+        log(gameId, "player.add", "Added " + name
+                + (faction != null && !faction.isBlank() ? " (" + faction + ")" : "")
+                + (color != null && !color.isBlank() ? " in " + color : ""));
         return Map.of("id", id);
     }
 
@@ -243,7 +298,11 @@ public class ApiController {
     @DeleteMapping("/players")
     public Map<String, Object> removePlayer(@RequestParam long id) {
         int scores = games.countScoresForPlayer(id);
+        var player = games.findPlayer(id);
         games.removePlayer(id);
+        log(player.map(Player::gameId).orElse(null), "player.remove",
+                "Removed " + player.map(Player::name).orElse("player " + id)
+                        + ", discarding " + scores + " score row(s)");
         return Map.of("ok", true, "scoresRemoved", scores);
     }
 
@@ -255,6 +314,8 @@ public class ApiController {
             @RequestParam long objectiveId,
             @RequestParam(required = false) Integer round) {
         games.reveal(gameId, objectiveId, round);
+        log(gameId, "objective.reveal", "Revealed " + objectiveName(objectiveId)
+                + (round != null ? " in round " + round : ""));
         return Map.of("ok", true);
     }
 
@@ -280,6 +341,8 @@ public class ApiController {
                                     + "Unscore them first, then remove it.");
         }
         games.unreveal(gameId, objectiveId);
+        log(gameId, "objective.unreveal",
+                "Took " + objectiveName(objectiveId) + " off the board");
         return Map.of("ok", true);
     }
 
@@ -291,6 +354,9 @@ public class ApiController {
             @RequestParam long playerId,
             @RequestParam long objectiveId) {
         boolean nowScored = games.toggleScore(gameId, playerId, objectiveId);
+        String who = games.findPlayer(playerId).map(Player::name).orElse("player " + playerId);
+        log(gameId, nowScored ? "score.add" : "score.remove",
+                who + (nowScored ? " scored " : " un-scored ") + objectiveName(objectiveId));
         return Map.of("scored", nowScored);
     }
 
@@ -312,12 +378,21 @@ public class ApiController {
                     HttpStatus.BAD_REQUEST, "kind must be public, secret or other; got: " + kind);
         }
         long id = games.addPoints(gameId, playerId, points, label, kind);
+        String who = games.findPlayer(playerId).map(Player::name).orElse("player " + playerId);
+        log(gameId, "points.add", who + " +" + points + " " + kind
+                + (label != null && !label.isBlank() ? ": " + label : ""));
         return Map.of("id", id);
     }
 
     @PostMapping("/points/delete")
     public Map<String, Object> deletePoints(@RequestParam long id) {
+        // Looked up first: once it is deleted there is nothing left to describe.
+        var summary = games.scoreSummary(id);
         games.deleteScore(id);
+        log(summary.map(ScoreSummary::gameId).orElse(null), "points.remove",
+                summary.map(x -> "Removed " + x.playerName() + " +" + x.points()
+                                + " " + x.kind() + ": " + x.what())
+                        .orElse("Removed score row " + id));
         return Map.of("ok", true);
     }
 }

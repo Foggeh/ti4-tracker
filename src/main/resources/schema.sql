@@ -56,5 +56,19 @@ CREATE TABLE IF NOT EXISTS score (
     UNIQUE (game_id, player_id, objective_id)
 );
 
+-- Append-only history of what happened, so a change nobody remembers making can
+-- be traced. Deliberately NOT foreign-keyed to game/player: the whole point is
+-- that the record outlives the row it describes, and a cascade would delete the
+-- evidence along with the player.
+CREATE TABLE IF NOT EXISTS audit (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id    INTEGER,
+    action     TEXT NOT NULL,
+    detail     TEXT,
+    actor      TEXT,
+    created_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_score_game   ON score (game_id);
 CREATE INDEX IF NOT EXISTS idx_player_game  ON player (game_id);
+CREATE INDEX IF NOT EXISTS idx_audit_game   ON audit (game_id, id DESC);

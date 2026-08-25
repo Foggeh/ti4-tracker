@@ -60,7 +60,22 @@
 <nav class="side-tabs" aria-label="Card galleries">
   <button type="button" data-gallery="public">Public</button>
   <button type="button" data-gallery="secret">Secret</button>
+  <button type="button" id="historyBtn">History</button>
 </nav>
+
+<dialog id="historyDlg" class="gallery-dlg">
+  <div class="gallery-head">
+    <strong class="history-title">History</strong>
+    <label class="inline-check">
+      <input type="checkbox" id="historyThisGame" checked> this game only
+    </label>
+    <input id="historyFilter" type="search" placeholder="Filter" autocomplete="off">
+    <span id="historyCount" class="muted small"></span>
+    <button type="button" class="ghost" id="historyClose">Close</button>
+  </div>
+  <div id="historyList" class="history-list"></div>
+  <p id="historyEmpty" class="empty" hidden>Nothing recorded yet.</p>
+</dialog>
 
 <dialog id="galleryDlg" class="gallery-dlg">
   <div class="gallery-head">

@@ -137,6 +137,31 @@ Responses are JSON. Request bodies are `application/x-www-form-urlencoded`.
 | `POST` | `/api/score` | Toggle a player on a public objective |
 | `POST` | `/api/points` | Manual entry — `points`, `label`, `kind` |
 | `POST` | `/api/points/delete` | Remove a ledger row — `id` |
+| `GET` | `/api/factions` | Faction list for the add-player dropdown |
+| `GET` | `/api/point-sources` | Label options, seeded plus learned from use |
+| `GET` | `/api/audit` | History — optional `game`, `limit` (default 300, max 2000) |
+
+## History
+
+Every mutating action is recorded in the `audit` table and shown under the
+**History** edge tab: game and player creation, reveals, scoring and un-scoring,
+manual points, and every removal. Removals are highlighted, since "who deleted
+that" is the question the log exists to answer.
+
+The table is deliberately **not** foreign-keyed to `game` or `player`. The whole
+point is that the record outlives the row it describes — a cascade would delete
+the evidence along with the player.
+
+There is no login, so the recorded actor is the requesting device's address.
+Requests from the game laptop show as "game laptop"; anything else shows its LAN
+address, which is what distinguishes one phone at the table from another.
+
+Audit writes never throw: losing a history line is bad, losing someone's score
+because the history write failed would be worse. Lines also go to the
+application log, so the trail survives the database file being replaced.
+
+Note that catalogue changes (adding a card, setting an image) are not tied to a
+game, so they only appear with **this game only** unchecked.
 
 ## Scoring rules encoded
 

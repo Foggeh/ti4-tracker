@@ -17,6 +17,7 @@ import ti4.domain.Game;
 import ti4.domain.LedgerRow;
 import ti4.domain.Player;
 import ti4.domain.RevealedObjective;
+import ti4.domain.ScoreSummary;
 
 /** Games, their players, which objectives are face-up, and the score ledger. */
 @Repository
@@ -288,6 +289,21 @@ public class GameRepository {
                 .param("createdAt", Instant.now().toString())
                 .update(keys);
         return keys.getKey().longValue();
+    }
+
+    /** Describes a score row before it is deleted, for the audit line. */
+    public Optional<ScoreSummary> scoreSummary(long id) {
+        return jdbc.sql("""
+                        SELECT s.game_id, p.name AS player_name, s.points,
+                               COALESCE(o.name, s.label, '(no label)') AS what, s.kind
+                          FROM score s
+                          JOIN player p ON p.id = s.player_id
+                          LEFT JOIN objective o ON o.id = s.objective_id
+                         WHERE s.id = :id
+                        """)
+                .param("id", id)
+                .query(ScoreSummary.class)
+                .optional();
     }
 
     public void deleteScore(long id) {
