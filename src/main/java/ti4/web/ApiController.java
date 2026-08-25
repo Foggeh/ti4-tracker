@@ -76,7 +76,7 @@ public class ApiController {
         for (String kind : List.of("secret", "other")) {
             for (String label : games.usedLabels(kind)) {
                 if (known.add(label.toLowerCase(Locale.ROOT))) {
-                    result.add(new PointSource(kind, 1, label, true));
+                    result.add(new PointSource(kind, 1, label, "Used before", true));
                 }
             }
         }

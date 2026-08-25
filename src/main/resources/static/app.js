@@ -540,8 +540,6 @@ function fillLabelOptions() {
   select.innerHTML = '';
 
   const forKind = pointSources.filter((s) => s.kind === kind);
-  const seeded = forKind.filter((s) => !s.learned);
-  const learned = forKind.filter((s) => s.learned);
 
   const blank = document.createElement('option');
   blank.value = '';
@@ -562,8 +560,18 @@ function fillLabelOptions() {
     select.append(group);
   };
 
-  addGroup(kind === 'secret' ? 'Secret objectives' : 'Point sources', seeded);
-  addGroup('Used before', learned);
+  // Group headings come from the data, in first-seen order, so the CSV controls
+  // both the grouping and the sequence. 40 secrets split by phase is navigable;
+  // one flat list of 40 is not.
+  const headings = [];
+  for (const s of forKind) {
+    const heading = s.group || (kind === 'secret' ? 'Secret objectives' : 'Point sources');
+    if (!headings.includes(heading)) headings.push(heading);
+  }
+  for (const heading of headings) {
+    addGroup(heading, forKind.filter((s) => (s.group || (kind === 'secret'
+      ? 'Secret objectives' : 'Point sources')) === heading));
+  }
 
   const other = document.createElement('option');
   other.value = CUSTOM_LABEL;

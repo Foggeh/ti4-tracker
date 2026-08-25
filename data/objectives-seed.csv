@@ -11,7 +11,7 @@ base,I,1,Erect a Monument,Spend 8 resources.
 base,I,1,Expand Borders,Control 6 planets in non-home systems.
 base,I,1,Found Research Outposts,Control 3 planets that have technology specialties.
 base,I,1,Intimidate Council,Have 1 or more ships in 2 systems that are adjacent to Mecatol Rex's system.
-base,I,1,Lead From the Front,Spend a total of 3 tokens from your tactic and/or strategy pools.
+base,I,1,Lead from the Front,Spend a total of 3 tokens from your tactic and/or strategy pools.
 base,I,1,Negotiate Trade Routes,Spend 5 trade goods.
 base,I,1,Sway the Council,Spend 8 influence.
 base,II,2,Centralize Galactic Trade,Spend 10 trade goods.
@@ -29,7 +29,7 @@ pok,I,1,Build Defenses,Have 4 or more structures.
 pok,I,1,Discover Lost Outposts,Control 2 planets that have attachments.
 pok,I,1,Engineer a Marvel,Have your flagship or a war sun on the game board.
 pok,I,1,Explore Deep Space,Have units in 3 systems that do not contain planets.
-pok,I,1,Improve Infrastructure,Have structures on 3 planets outside your home system.
+pok,I,1,Improve Infrastructure,Have structures on 3 planets outside of your home system.
 pok,I,1,Make History,"Have units in 2 systems that contain legendary planets, Mecatol Rex, or anomalies."
 pok,I,1,Populate the Outer Rim,Have units in 3 systems on the edge of the game board other than your home system.
 pok,I,1,Push Boundaries,Control more planets than each of 2 of your neighbors.
@@ -41,6 +41,6 @@ pok,II,2,Construct Massive Cities,Have 7 or more structures.
 pok,II,2,Control the Borderlands,Have units in 5 systems on the edge of the game board other than your home system.
 pok,II,2,Hold Vast Reserves,"Spend 6 influence, 6 resources, and 6 trade goods."
 pok,II,2,Patrol Vast Territories,Have units in 5 systems that do not contain planets.
-pok,II,2,Protect the Border,Have structures on 5 planets outside your home system.
+pok,II,2,Protect the Border,Have structures on 5 planets outside of your home system.
 pok,II,2,Reclaim Ancient Monuments,Control 3 planets that have attachments.
 pok,II,2,Rule Distant Lands,"Control 2 planets that are each in or adjacent to a different, other player's home system."

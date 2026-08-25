@@ -1,39 +1,76 @@
 # Options for the Label dropdown in "Add points", split by kind.
 #
-# Columns: kind,points,name
+# Columns: kind,points,name,group
 # kind:   secret | other
 # points: the usual value, prefilled when picked. Still editable.
+# group:  optional; becomes the heading the option sits under in the dropdown.
 #
-# The dropdown also learns: any label you type via "— something else —" is
-# remembered and appears here-on-in for that kind, so this file does not have to
-# be complete to be useful. Read at startup, no recompile.
+# The dropdown also learns: any label typed via "— something else —" is
+# remembered and offered from then on, so homebrew and Thunder's Edge sources
+# need no edit here. Read at startup, no recompile, no database wipe.
 #
-kind,points,name
+kind,points,name,group
 #
 # --- Other point sources -------------------------------------------------------
 # Base + Prophecy of Kings. Thunder's Edge may add sources not listed here.
-other,1,Custodians token
-other,1,Imperial (control Mecatol Rex)
-other,1,Support for the Throne
-other,1,Shard of the Throne
-other,1,The Crown of Emphidia
-other,1,Political Censure
-other,1,Seed of an Empire
-other,1,Holy Planet of Ise
-other,1,Mutiny (voted for)
-other,-1,Mutiny (voted against)
-other,1,Manual adjustment
+other,1,Custodians token,Board
+other,1,Imperial (control Mecatol Rex),Strategy
+other,1,Support for the Throne,Promissory
+other,1,Shard of the Throne,Relic / agenda
+other,1,The Crown of Emphidia,Relic / agenda
+other,1,Political Censure,Agenda
+other,1,Seed of an Empire,Agenda
+other,1,Holy Planet of Ise,Agenda
+other,1,Mutiny (voted for),Agenda
+other,-1,Mutiny (voted against),Agenda
+other,1,Manual adjustment,Other
 #
 # --- Secret objectives ---------------------------------------------------------
-# Deliberately empty. There are 40+ secret objective cards and I could not find
-# a source I trusted for their exact names, so drafting them from memory would
-# have put invented card names in your dropdown -- the same call as with the
-# Thunder's Edge objectives.
+# All 40, grouped by the phase they are scored in. Base game and Prophecy of
+# Kings are merged, since at the table you care about the phase, not the box.
 #
-# Two ways to fill it, both fine:
-#   1. Play on. Pick "— something else —" and type the card name when you score
-#      it. It is remembered and appears in the dropdown from then on. After a
-#      couple of games the list is yours and accurate.
-#   2. Paste me the list, or add rows here directly:
-#        secret,1,Become a Martyr
-#
+# Action phase -- base game
+secret,1,Destroy Their Greatest Ship,Action phase
+secret,1,Make an Example of Their World,Action phase
+secret,1,Spark a Rebellion,Action phase
+secret,1,Turn Their Fleets to Dust,Action phase
+secret,1,Unveil Flagship,Action phase
+# Action phase -- Prophecy of Kings
+secret,1,Become a Martyr,Action phase
+secret,1,Betray a Friend,Action phase
+secret,1,Brave the Void,Action phase
+secret,1,Darken the Skies,Action phase
+secret,1,Demonstrate Your Power,Action phase
+secret,1,Fight With Precision,Action phase
+secret,1,Prove Endurance,Action phase
+# Status phase -- base game
+secret,1,Adapt New Strategies,Status phase
+secret,1,Become the Gatekeeper,Status phase
+secret,1,Control the Region,Status phase
+secret,1,Cut Supply Lines,Status phase
+secret,1,Establish a Perimeter,Status phase
+secret,1,Forge an Alliance,Status phase
+secret,1,Form a Spy Network,Status phase
+secret,1,Fuel the War Machine,Status phase
+secret,1,Gather a Mighty Fleet,Status phase
+secret,1,Learn the Secrets of the Cosmos,Status phase
+secret,1,Master the Laws of Physics,Status phase
+secret,1,Mine Rare Metals,Status phase
+secret,1,Monopolize Production,Status phase
+secret,1,Occupy the Seat of the Empire,Status phase
+secret,1,Threaten Enemies,Status phase
+# Status phase -- Prophecy of Kings
+secret,1,Defy Space and Time,Status phase
+secret,1,Destroy Heretical Works,Status phase
+secret,1,Establish Hegemony,Status phase
+secret,1,Foster Cohesion,Status phase
+secret,1,Hoard Raw Materials,Status phase
+secret,1,Mechanize The Military,Status phase
+secret,1,Occupy The Fringe,Status phase
+secret,1,Produce En Masse,Status phase
+secret,1,Seize An Icon,Status phase
+secret,1,Stake your Claim,Status phase
+secret,1,Strengthen Bonds,Status phase
+# Agenda phase -- Prophecy of Kings only
+secret,1,Dictate Policy,Agenda phase
+secret,1,Drive the Debate,Agenda phase

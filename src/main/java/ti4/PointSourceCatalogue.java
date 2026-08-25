@@ -54,7 +54,7 @@ public class PointSourceCatalogue {
                 }
                 List<String> fields = Csv.parseLine(line.strip());
                 if (fields.size() < 3) {
-                    log.warn("Point-source line {} has {} fields, expected 3; skipped.",
+                    log.warn("Point-source line {} has {} fields, expected at least 3; skipped.",
                             lineNo, fields.size());
                     continue;
                 }
@@ -68,9 +68,10 @@ public class PointSourceCatalogue {
                             + "skipped.", lineNo, kind);
                     continue;
                 }
+                String group = fields.size() > 3 ? Csv.emptyToNull(fields.get(3)) : null;
                 try {
                     loaded.add(new PointSource(kind, Integer.parseInt(fields.get(1)),
-                            fields.get(2), false));
+                            fields.get(2), group, false));
                 } catch (NumberFormatException e) {
                     log.warn("Point-source line {} has non-numeric points '{}'; skipped.",
                             lineNo, fields.get(1));
