@@ -326,8 +326,25 @@ function wireUp() {
   });
 
   el('addCardBtn').addEventListener('click', () => {
-    el('revealDlg').close('cancel');
+    closeDialog(el('revealDlg'));
     el('addCardDlg').showModal();
+  });
+
+  // Cancel closes its dialog explicitly rather than submitting it. As a submit
+  // button it tripped HTML5 validation on the required fields and refused to
+  // close at all -- the original bug.
+  document.querySelectorAll('dialog [data-cancel]').forEach((btn) => {
+    btn.addEventListener('click', () => closeDialog(btn.closest('dialog')));
+  });
+
+  // Escape fires `cancel`, which is well supported even where `close` is not.
+  document.querySelectorAll('dialog').forEach((dialog) => {
+    dialog.addEventListener('cancel', () => {
+      const form = dialog.querySelector('form');
+      if (form) {
+        form.reset();
+      }
+    });
   });
 
   el('objFilter').addEventListener('input', fillObjectiveSelect);
@@ -341,18 +358,36 @@ function wireUp() {
   el('pointsPlayer').addEventListener('change', updatePointsDialog);
 }
 
-/** Runs handler only when the dialog was closed with the OK button. */
+/**
+ * Runs handler when the dialog's form is submitted, i.e. the OK button.
+ *
+ * Deliberately listens for the form's `submit` rather than the dialog's `close`.
+ * The close event is not fired by every engine -- one browser tested here never
+ * fires it, not even for an explicit close() -- which would silently break every
+ * dialog in the app. `submit` is dependable, and `method="dialog"` still closes
+ * the dialog for us.
+ *
+ * Only the OK button can submit: Cancel is type="button", so it never reaches
+ * here and never trips HTML5 validation on a required field.
+ */
 function onDialogOk(dialogId, formId, handler) {
-  const dialog = el(dialogId);
-  dialog.addEventListener('close', () => {
-    if (dialog.returnValue !== 'ok') return;
-    const form = el(formId);
+  const form = el(formId);
+  form.addEventListener('submit', () => {
     const values = formValues(form);
     guard(async () => {
       await handler(values);
       form.reset();
     });
   });
+}
+
+/** Discard a dialog without submitting it, clearing whatever was typed. */
+function closeDialog(dialog) {
+  const form = dialog.querySelector('form');
+  dialog.close('cancel');
+  if (form) {
+    form.reset();
+  }
 }
 
 function openRevealDialog() {
