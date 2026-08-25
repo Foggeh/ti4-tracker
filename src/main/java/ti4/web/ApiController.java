@@ -19,7 +19,9 @@ import ti4.domain.Objective;
 import ti4.domain.Player;
 import ti4.domain.PlayerState;
 import ti4.domain.RevealedObjective;
+import ti4.FactionCatalogue;
 import ti4.ImageResolver;
+import ti4.domain.Faction;
 import ti4.repo.CatalogueRepository;
 import ti4.repo.GameRepository;
 
@@ -33,12 +35,20 @@ public class ApiController {
     private final GameRepository games;
     private final CatalogueRepository catalogue;
     private final ImageResolver images;
+    private final FactionCatalogue factions;
 
     public ApiController(GameRepository games, CatalogueRepository catalogue,
-                         ImageResolver images) {
+                         ImageResolver images, FactionCatalogue factions) {
         this.games = games;
         this.catalogue = catalogue;
         this.images = images;
+        this.factions = factions;
+    }
+
+    /** Reference data for the add-player dropdown. */
+    @GetMapping("/factions")
+    public List<Faction> factions() {
+        return factions.all();
     }
 
     /**

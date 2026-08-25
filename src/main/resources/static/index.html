@@ -86,7 +86,11 @@
   <form method="dialog" id="addPlayerForm">
     <h3>Add player</h3>
     <label>Name<input name="name" required></label>
-    <label>Faction<input name="faction" placeholder="Federation of Sol"></label>
+    <label>Faction
+      <select name="faction" id="factionSelect">
+        <option value="">— pick a faction —</option>
+      </select>
+    </label>
     <label>Colour
       <select name="color">
         <option value="">none</option>

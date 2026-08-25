@@ -55,11 +55,45 @@ document.addEventListener('DOMContentLoaded', async () => {
   wireUp();
   try {
     catalogue = await api.get('/api/objectives');
+    await loadFactions();
     await loadGames();
   } catch (e) {
     alert('Could not reach the server: ' + e.message);
   }
 });
+
+const EXPANSION_LABELS = {
+  base: 'Base game',
+  pok: 'Prophecy of Kings',
+  codex: 'Codex',
+  'thunders-edge': "Thunder's Edge",
+  homebrew: 'Homebrew',
+};
+
+/** Fills the add-player faction dropdown, grouped by expansion. */
+async function loadFactions() {
+  const factions = await api.get('/api/factions');
+  const select = el('factionSelect');
+
+  // Preserve source order within a group, but group in a sensible sequence
+  // rather than whatever order the file happens to use.
+  const order = Object.keys(EXPANSION_LABELS);
+  const groups = [...new Set(factions.map((f) => f.expansion))].sort(
+    (a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99)
+  );
+
+  for (const expansion of groups) {
+    const group = document.createElement('optgroup');
+    group.label = EXPANSION_LABELS[expansion] || expansion;
+    for (const f of factions.filter((x) => x.expansion === expansion)) {
+      const opt = document.createElement('option');
+      opt.value = f.name;
+      opt.textContent = f.name;
+      group.append(opt);
+    }
+    select.append(group);
+  }
+}
 
 async function loadGames() {
   const games = await api.get('/api/games');

@@ -7,5 +7,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * catalogue can change without a rebuild.
  */
 @ConfigurationProperties(prefix = "ti4")
-public record Ti4Properties(String imagesDir, String seedFile) {
+public record Ti4Properties(String imagesDir, String seedFile, String factionsFile) {
 }

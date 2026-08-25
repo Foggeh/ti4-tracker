@@ -1,0 +1,46 @@
+# TI4 faction list, used to populate the faction dropdown when adding a player.
+#
+# Columns: expansion,name
+# expansion: base | pok | codex | thunders-edge | homebrew
+#
+# Edit freely -- read at startup, no recompile. The player.faction column is
+# still plain text, so nothing here constrains existing saved games.
+#
+expansion,name
+base,The Arborec
+base,The Barony of Letnev
+base,The Clan of Saar
+base,The Embers of Muaat
+base,The Emirates of Hacan
+base,The Federation of Sol
+base,The Ghosts of Creuss
+base,The L1Z1X Mindnet
+base,The Mentak Coalition
+base,The Naalu Collective
+base,The Nekro Virus
+base,Sardakk N'orr
+base,The Universities of Jol-Nar
+base,The Winnu
+base,The Xxcha Kingdom
+base,The Yin Brotherhood
+base,The Yssaril Tribes
+pok,The Argent Flight
+pok,The Empyrean
+pok,The Mahact Gene-Sorcerers
+pok,The Naaz-Rokha Alliance
+pok,The Nomad
+pok,The Titans of Ul
+pok,The Vuil'Raith Cabal
+codex,The Council Keleres
+#
+# --- Thunder's Edge ------------------------------------------------------------
+# All five confirmed by the owner against the physical expansion.
+# "The Firmament/The Obsidian" really is one faction with a slashed name -- it is
+# not two sources disagreeing, and not the relic of the same name.
+thunders-edge,The Crimson Rebellion
+thunders-edge,The Deepwrought Scholarate
+thunders-edge,The Firmament/The Obsidian
+thunders-edge,Last Bastion
+thunders-edge,The Ral Nel Consortium
+#
+# Delete the codex line above if you do not have Codex III (Council Keleres).

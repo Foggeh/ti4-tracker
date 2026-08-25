@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -59,12 +58,12 @@ public class ObjectiveSeeder implements ApplicationRunner {
 
         for (int lineNo = 1; lineNo <= lines.size(); lineNo++) {
             String raw = lines.get(lineNo - 1);
-            String line = raw.strip();
-            if (line.isEmpty() || line.startsWith("#")) {
+            if (Csv.isSkippable(raw)) {
                 continue;
             }
+            String line = raw.strip();
 
-            List<String> fields = parseCsvLine(line);
+            List<String> fields = Csv.parseLine(line);
             if (fields.size() < 4) {
                 log.warn("Seed line {} has {} fields, expected at least 4; skipped.",
                         lineNo, fields.size());
@@ -79,8 +78,8 @@ public class ObjectiveSeeder implements ApplicationRunner {
             String stage = fields.get(1);
             String pointsText = fields.get(2);
             String name = fields.get(3);
-            String requirement = fields.size() > 4 ? emptyToNull(fields.get(4)) : null;
-            String image = fields.size() > 5 ? emptyToNull(fields.get(5)) : null;
+            String requirement = fields.size() > 4 ? Csv.emptyToNull(fields.get(4)) : null;
+            String image = fields.size() > 5 ? Csv.emptyToNull(fields.get(5)) : null;
 
             int points;
             try {
@@ -131,40 +130,4 @@ public class ObjectiveSeeder implements ApplicationRunner {
         byGroup.forEach((group, count) -> log.info("  {}: {}", group, count));
     }
 
-    /** Minimal RFC 4180 style split: handles quoted fields and doubled quotes. */
-    private static List<String> parseCsvLine(String line) {
-        List<String> fields = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        boolean inQuotes = false;
-
-        for (int i = 0; i < line.length(); i++) {
-            char c = line.charAt(i);
-            if (inQuotes) {
-                if (c == '"') {
-                    boolean escapedQuote = i + 1 < line.length() && line.charAt(i + 1) == '"';
-                    if (escapedQuote) {
-                        current.append('"');
-                        i++;
-                    } else {
-                        inQuotes = false;
-                    }
-                } else {
-                    current.append(c);
-                }
-            } else if (c == '"') {
-                inQuotes = true;
-            } else if (c == ',') {
-                fields.add(current.toString().strip());
-                current.setLength(0);
-            } else {
-                current.append(c);
-            }
-        }
-        fields.add(current.toString().strip());
-        return fields;
-    }
-
-    private static String emptyToNull(String value) {
-        return value == null || value.isBlank() ? null : value;
-    }
 }
