@@ -1,0 +1,147 @@
+# TI4 Objective Tracker
+
+A small scoring aid for Twilight Imperium 4th Edition. Runs a local web server on
+the game laptop; anyone at the table can open it on a phone or tablet on the same
+wifi.
+
+## What it does
+
+- Mark which public objectives are revealed this game (Stage I / Stage II)
+- Tap a player against a revealed objective to score it
+- Add ad-hoc points with a label, for secret objectives and everything else
+- Live running totals per player, with a leader highlight
+
+## Stack
+
+| Piece | Choice |
+|---|---|
+| Framework | Spring Boot 4.1.1 |
+| Java | 21 (Adoptium, via `JAVA_HOME`) |
+| Build | Maven |
+| Database | SQLite, single file at `data/ti4.db` |
+| Data access | `spring-boot-starter-jdbc` + `JdbcClient` |
+| Front end | Plain HTML/CSS/JS, no framework |
+
+## Design decisions
+
+**Spring Boot 4.1, not 3.x.** The 3.5 line's free support ended 30 June 2026, so
+starting on 3.x would mean starting unsupported. 4.1 covers Java 17–26.
+
+**JDBC, not JPA.** Hibernate has no officially supported SQLite dialect — only
+community ones — so `spring-boot-starter-data-jpa` is the awkward path here
+rather than the easy one. `JdbcClient` plus an explicit `schema.sql` keeps the
+SQL visible and avoids the dialect problem entirely.
+
+**Connection pool of one.** SQLite serialises writers. With several people
+tapping at once, a bigger pool produces `SQLITE_BUSY` errors rather than
+throughput, so `spring.datasource.hikari.maximum-pool-size=1`.
+
+**JDK 21 pinned explicitly.** This machine has Oracle JDK 17 on `PATH` and
+Adoptium JDK 21 at `JAVA_HOME`. The build uses `JAVA_HOME` so there is no
+ambiguity, and no need to change system environment variables.
+
+**Requests are form-encoded, responses are JSON.** Form encoding needs no
+request DTO per endpoint for an app this small.
+
+**Points are an append-only ledger.** The `score` table holds one row per
+scoring event, not a running total. A player's score is a `SUM` over their rows,
+so every point is attributable and any mistake is fixed by deleting one row
+rather than reverse-engineering a total.
+
+**Objectives are data, not code** — see `data/objectives-seed.csv`. Fixing a
+wrong requirement or adding a homebrew card is a one-line edit, no recompile.
+The seeder only runs when the table is empty, so it never clobbers cards you
+added in the app.
+
+## Objective data accuracy
+
+`data/objectives-seed.csv` carries base-game and Prophecy of Kings objectives
+**drafted from memory and not yet verified against physical cards.** Point values
+and names are probably right; requirement wording and the exact base/PoK split
+are the likeliest errors. Please spot-check it. The app logs a reminder on first
+boot.
+
+Thunder's Edge objectives are **not** included. That expansion released
+2025-10-24, too recent for a reliable draft, and inventing card names would be
+worse than leaving them out. Add them from your own cards — either append rows to
+the CSV before first boot, or use **Reveal objective → Card not listed…** in the
+app, which is also how you attach an image.
+
+## Card images
+
+Drop card scans in `data/images/` and put the filename in the objective's `image`
+field. They are served straight off disk, so a new image needs no rebuild.
+
+They are **not** committed — that artwork is Fantasy Flight Games' copyright, and
+a public GitHub repo is a different proposition from a folder on your own
+machine. `.gitignore` keeps them local.
+
+## Running it
+
+```
+mvn spring-boot:run
+```
+
+Then open <http://localhost:8080>. For other devices at the table, use the
+laptop's LAN address, e.g. `http://192.168.1.20:8080`.
+
+## Layout
+
+```
+ti4-tracker/
+  pom.xml
+  data/
+    objectives-seed.csv        the card catalogue -- edit freely
+    ti4.db                     live database (not committed)
+    images/                    your card scans (not committed)
+  src/main/java/ti4/
+    Ti4TrackerApplication.java
+    Ti4Properties.java         externalised paths
+    WebConfig.java             serves /images/** off disk
+    ObjectiveSeeder.java        CSV import on first boot
+    domain/                    records
+    repo/                      JdbcClient queries
+    web/ApiController.java     the whole API
+  src/main/resources/
+    application.properties
+    schema.sql
+    static/                    index.html, style.css, app.js
+```
+
+## API
+
+Responses are JSON. Request bodies are `application/x-www-form-urlencoded`.
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/state?game=<id>` | Everything the UI needs in one call |
+| `GET` | `/api/games` | List saved games |
+| `POST` | `/api/games` | New game — `name`, `vpTarget`, `maxSecrets` |
+| `GET` | `/api/objectives` | Catalogue, optional `expansion` filter |
+| `POST` | `/api/objectives` | Add a card |
+| `POST` | `/api/objectives/image` | Attach a scan — `id`, `image` |
+| `POST` | `/api/players` | Add player — `gameId`, `name`, `faction`, `color` |
+| `DELETE` | `/api/players` | Remove player — `id` |
+| `POST` | `/api/reveal` | Reveal — `gameId`, `objectiveId`, `round` |
+| `POST` | `/api/unreveal` | Un-reveal, and delete its scores |
+| `POST` | `/api/score` | Toggle a player on a public objective |
+| `POST` | `/api/points` | Manual entry — `points`, `label`, `kind` |
+| `POST` | `/api/points/delete` | Remove a ledger row — `id` |
+
+## Scoring rules encoded
+
+- Public objectives: Stage I = 1 VP, Stage II = 2 VP, taken from the card
+- Secret objectives: entered manually, since they are hidden information
+- The secret cap (3, or 4 with The Obsidian) is a **warning, not a block** — the
+  app should never refuse input mid-game and leave you arguing with it
+- Other VP sources — custodians token, Support for the Throne, Imperial, agenda
+  outcomes like Shard of the Throne, relics like the Crown of Emphidia — go
+  through the same manual entry with a label
+
+## Not done yet
+
+- Never compiled or run. Written, not verified.
+- No tests.
+- No image upload through the browser; you copy files into `data/images/`
+  yourself and type the filename.
+- No "who is winning on tiebreak" logic (TI4 breaks ties by initiative order).

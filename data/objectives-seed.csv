@@ -1,0 +1,58 @@
+# TI4 public objective catalogue.
+#
+# !! VERIFY BEFORE TRUSTING !!
+# The base-game and Prophecy of Kings rows below were drafted from memory and
+# have NOT been checked against physical cards. Names and point values are
+# likely right; requirement wording and the exact base/PoK split are the most
+# probable places for errors. Correct anything wrong here -- this file is the
+# single source of truth and needs no code changes.
+#
+# Thunder's Edge objectives are deliberately absent: that expansion released
+# 2025-10-24, too recent to draft reliably. Add them from your own cards, either
+# by appending rows here or via the "Add objective" screen in the app.
+#
+# Columns: expansion,stage,points,name,requirement
+# expansion: base | pok | thunders-edge | homebrew
+# stage:     I | II
+#
+expansion,stage,points,name,requirement
+base,I,1,Corner the Market,Control 4 planets that each have the same planet trait.
+base,I,1,Develop Weaponry,Own 2 unit upgrade technologies.
+base,I,1,Diversify Research,Own 2 technologies in each of 2 colors.
+base,I,1,Erect a Monument,Spend 8 resources.
+base,I,1,Expand Borders,Control 6 planets in non-home systems.
+base,I,1,Found Research Outposts,Control 3 planets that have technology specialties.
+base,I,1,Intimidate Council,Have 1 or more ships in 2 systems that are adjacent to Mecatol Rex's system.
+base,I,1,Lead From the Front,Spend a total of 3 tokens from your tactic and/or strategy pools.
+base,I,1,Negotiate Trade Routes,Spend 5 trade goods.
+base,I,1,Sway the Council,Spend 8 influence.
+base,II,2,Centralize Galactic Trade,Spend 10 trade goods.
+base,II,2,Conquer the Weak,Control 1 planet that is in another player's home system.
+base,II,2,Form Galactic Brain Trust,Control 5 planets that have technology specialties.
+base,II,2,Found a Golden Age,Spend 16 resources.
+base,II,2,Galvanize the People,Spend a total of 6 tokens from your tactic and/or strategy pools.
+base,II,2,Manipulate Galactic Law,Spend 16 influence.
+base,II,2,Master the Sciences,Own 2 technologies in each of 4 colors.
+base,II,2,Revolutionize Warfare,Own 3 unit upgrade technologies.
+base,II,2,Subdue the Galaxy,Control 11 planets in non-home systems.
+base,II,2,Unify the Colonies,Control 6 planets that each have the same planet trait.
+pok,I,1,Amass Wealth,"Spend 3 influence, 3 resources, and 3 trade goods."
+pok,I,1,Build Defenses,Have 4 or more structures.
+pok,I,1,Discover Lost Outposts,Control 2 planets that have attachments.
+pok,I,1,Engineer a Marvel,Have your flagship or a war sun on the game board.
+pok,I,1,Explore Deep Space,Have units in 3 systems that do not contain planets.
+pok,I,1,Improve Infrastructure,Have structures on 3 planets outside your home system.
+pok,I,1,Make History,"Have units in 2 systems that contain legendary planets, Mecatol Rex, or anomalies."
+pok,I,1,Populate the Outer Rim,Have units in 3 systems on the edge of the game board other than your home system.
+pok,I,1,Push Boundaries,Control more planets than each of 2 of your neighbors.
+pok,I,1,Raise a Fleet,Have 5 or more non-fighter ships in 1 system.
+pok,II,2,Achieve Supremacy,Have your flagship or a war sun in another player's home system or the Mecatol Rex system.
+pok,II,2,Become a Legend,"Have units in 4 systems that contain legendary planets, Mecatol Rex, or anomalies."
+pok,II,2,Command an Armada,Have 8 or more non-fighter ships in 1 system.
+pok,II,2,Construct Massive Cities,Have 7 or more structures.
+pok,II,2,Control the Borderlands,Have units in 5 systems on the edge of the game board other than your home system.
+pok,II,2,Hold Vast Reserves,"Spend 6 influence, 6 resources, and 6 trade goods."
+pok,II,2,Patrol Vast Territories,Have units in 5 systems that do not contain planets.
+pok,II,2,Protect the Border,Have structures on 5 planets outside your home system.
+pok,II,2,Reclaim Ancient Monuments,Control 3 planets that have attachments.
+pok,II,2,Rule Distant Lands,"Control 2 planets that are each in or adjacent to a different, other player's home system."

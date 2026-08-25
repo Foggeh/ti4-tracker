@@ -1,0 +1,23 @@
+# Maven build output
+target/
+*.class
+
+# The live database -- game data, not source. Keep local.
+data/ti4.db
+data/ti4.db-journal
+data/ti4.db-wal
+data/ti4.db-shm
+
+# Card scans. See README: these are FFG artwork, deliberately not committed.
+data/images/*
+!data/images/.gitkeep
+
+# Local Maven install, if fetched into the project
+tools/
+
+# Editor / OS noise
+.idea/
+*.iml
+.vscode/
+Thumbs.db
+desktop.ini

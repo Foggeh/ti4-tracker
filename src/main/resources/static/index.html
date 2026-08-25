@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TI4 Objective Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <h1>TI4 Tracker</h1>
+  <div class="topbar-controls">
+    <select id="gameSelect" aria-label="Select game"></select>
+    <button id="newGameBtn" class="ghost">New game</button>
+  </div>
+</header>
+
+<main id="main" hidden>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Standings</h2>
+      <div>
+        <span id="vpTarget" class="muted"></span>
+        <button id="addPlayerBtn" class="ghost">Add player</button>
+      </div>
+    </div>
+    <div id="players" class="players"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Public objectives</h2>
+      <button id="revealBtn" class="ghost">Reveal objective</button>
+    </div>
+    <div id="objectives" class="objectives"></div>
+    <p id="noObjectives" class="empty" hidden>
+      Nothing face-up yet. Use <strong>Reveal objective</strong> as each card flips.
+    </p>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Score ledger</h2>
+      <button id="addPointsBtn" class="ghost">Add points</button>
+    </div>
+    <p class="muted small">
+      Secret objectives and anything else — custodians, Support for the Throne,
+      agendas, relics — live here.
+    </p>
+    <ul id="ledger" class="ledger"></ul>
+  </section>
+
+</main>
+
+<p id="noGame" class="empty" hidden>No games yet. Create one to get started.</p>
+
+<!-- ---------------------------------------------------------------- dialogs -->
+
+<dialog id="newGameDlg">
+  <form method="dialog" id="newGameForm">
+    <h3>New game</h3>
+    <label>Name<input name="name" required placeholder="Friday night, 6p"></label>
+    <label>Victory points
+      <select name="vpTarget">
+        <option value="10" selected>10 (standard)</option>
+        <option value="14">14 (long game)</option>
+        <option value="12">12</option>
+      </select>
+    </label>
+    <label>Max secret objectives
+      <select name="maxSecrets">
+        <option value="3" selected>3 (standard)</option>
+        <option value="4">4 (The Obsidian in play)</option>
+      </select>
+    </label>
+    <menu>
+      <button value="cancel" class="ghost">Cancel</button>
+      <button value="ok" class="primary">Create</button>
+    </menu>
+  </form>
+</dialog>
+
+<dialog id="addPlayerDlg">
+  <form method="dialog" id="addPlayerForm">
+    <h3>Add player</h3>
+    <label>Name<input name="name" required></label>
+    <label>Faction<input name="faction" placeholder="Federation of Sol"></label>
+    <label>Colour
+      <select name="color">
+        <option value="">none</option>
+        <option value="blue">blue</option>
+        <option value="green">green</option>
+        <option value="red">red</option>
+        <option value="yellow">yellow</option>
+        <option value="purple">purple</option>
+        <option value="black">black</option>
+        <option value="orange">orange</option>
+        <option value="pink">pink</option>
+      </select>
+    </label>
+    <menu>
+      <button value="cancel" class="ghost">Cancel</button>
+      <button value="ok" class="primary">Add</button>
+    </menu>
+  </form>
+</dialog>
+
+<dialog id="revealDlg">
+  <form method="dialog" id="revealForm">
+    <h3>Reveal objective</h3>
+    <label>Filter
+      <input id="objFilter" type="search" placeholder="Type to narrow the list" autocomplete="off">
+    </label>
+    <label>Objective
+      <select name="objectiveId" id="objectiveSelect" size="12" required></select>
+    </label>
+    <label>Round<input name="round" type="number" min="1" max="12" placeholder="optional"></label>
+    <menu>
+      <button value="cancel" class="ghost">Cancel</button>
+      <button type="button" id="addCardBtn" class="ghost">Card not listed…</button>
+      <button value="ok" class="primary">Reveal</button>
+    </menu>
+  </form>
+</dialog>
+
+<dialog id="addCardDlg">
+  <form method="dialog" id="addCardForm">
+    <h3>Add a card to the catalogue</h3>
+    <p class="muted small">
+      For Thunder's Edge cards and homebrew. Read the values off the physical card.
+    </p>
+    <label>Name<input name="name" required></label>
+    <label>Stage
+      <select name="stage" id="cardStage">
+        <option value="I">I (1 point)</option>
+        <option value="II">II (2 points)</option>
+      </select>
+    </label>
+    <label>Points<input name="points" type="number" value="1" min="0" max="10" required></label>
+    <label>Requirement<textarea name="requirement" rows="2"></textarea></label>
+    <label>Expansion
+      <select name="expansion">
+        <option value="thunders-edge" selected>Thunder's Edge</option>
+        <option value="base">Base game</option>
+        <option value="pok">Prophecy of Kings</option>
+        <option value="homebrew">Homebrew</option>
+      </select>
+    </label>
+    <label>Image filename
+      <input name="image" placeholder="corner-the-market.jpg">
+      <small class="muted">A file you dropped in <code>data/images/</code>. Optional.</small>
+    </label>
+    <menu>
+      <button value="cancel" class="ghost">Cancel</button>
+      <button value="ok" class="primary">Add card</button>
+    </menu>
+  </form>
+</dialog>
+
+<dialog id="addPointsDlg">
+  <form method="dialog" id="addPointsForm">
+    <h3>Add points</h3>
+    <label>Player<select name="playerId" id="pointsPlayer" required></select></label>
+    <label>Kind
+      <select name="kind" id="pointsKind">
+        <option value="secret" selected>Secret objective</option>
+        <option value="other">Other source</option>
+      </select>
+    </label>
+    <label>Points<input name="points" type="number" value="1" required></label>
+    <label>Label
+      <input name="label" id="pointsLabel" placeholder="Become a Martyr">
+      <small class="muted">What earned it, so the total is explainable later.</small>
+    </label>
+    <p id="secretWarning" class="warning" hidden></p>
+    <menu>
+      <button value="cancel" class="ghost">Cancel</button>
+      <button value="ok" class="primary">Add</button>
+    </menu>
+  </form>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
