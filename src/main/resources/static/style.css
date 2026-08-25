@@ -127,6 +127,26 @@ main { padding: 18px; max-width: 1100px; margin: 0 auto; display: grid; gap: 18p
 }
 
 .player-card.leader { border-color: var(--gold); }
+
+/* Sits in the corner and stays faint until the card is hovered, so it does not
+   compete with the score. Always full size for a fingertip, though. */
+.player-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 2px 7px;
+  font-size: 12px;
+  line-height: 1.2;
+  background: transparent;
+  border-color: transparent;
+  color: #454d59;
+}
+
+.player-card:hover .player-remove { color: var(--muted); }
+.player-remove:hover { border-color: var(--p-red); color: var(--p-red); }
+
+/* Taken colours stay listed but unselectable, rather than vanishing. */
+dialog option:disabled { color: #4a525e; }
 .player-card .name { font-weight: 600; }
 .player-card .faction { font-size: 12px; color: var(--muted); }
 

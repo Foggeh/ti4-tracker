@@ -209,20 +209,42 @@ public class ApiController {
 
     // --- players -------------------------------------------------------------
 
+    /**
+     * Adds a player. Colours must be unique within a game.
+     *
+     * <p>The UI also greys out taken colours, but this check is the one that
+     * counts: two people adding players from different phones would not see each
+     * other's choice until they refreshed.
+     */
     @PostMapping("/players")
     public Map<String, Object> addPlayer(
             @RequestParam long gameId,
             @RequestParam String name,
             @RequestParam(required = false) String faction,
             @RequestParam(required = false) String color) {
+
+        if (color != null && !color.isBlank()
+                && games.usedColors(gameId).stream().anyMatch(color::equalsIgnoreCase)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Another player is already " + color + " in this game.");
+        }
         long id = games.addPlayer(gameId, name, faction, color);
         return Map.of("id", id);
     }
 
+    /**
+     * Removes a player and every score they held.
+     *
+     * <p>Unlike un-revealing an objective, this is allowed even with points on
+     * the board: the player disappears along with their points, so nothing is
+     * left showing a total that no longer adds up. The UI names the count before
+     * asking.
+     */
     @DeleteMapping("/players")
     public Map<String, Object> removePlayer(@RequestParam long id) {
+        int scores = games.countScoresForPlayer(id);
         games.removePlayer(id);
-        return Map.of("ok", true);
+        return Map.of("ok", true, "scoresRemoved", scores);
     }
 
     // --- revealing -----------------------------------------------------------

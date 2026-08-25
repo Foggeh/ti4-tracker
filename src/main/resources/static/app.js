@@ -169,12 +169,15 @@ function renderPlayers() {
 
     const over = p.secretCount > state.game.maxSecrets;
     card.innerHTML = `
+      <button class="player-remove" title="Remove ${escapeHtml(p.name)}"
+              aria-label="Remove ${escapeHtml(p.name)}">✕</button>
       <div class="name">${escapeHtml(p.name)}</div>
       <div class="faction">${escapeHtml(p.faction || '')}</div>
       <div class="score">${p.total}</div>
       <div class="secrets${over ? ' over' : ''}">
         ${p.secretCount}/${state.game.maxSecrets} secrets${over ? ' — over cap' : ''}
       </div>`;
+    card.querySelector('.player-remove').addEventListener('click', () => removePlayer(p));
     host.append(card);
   }
 }
@@ -519,6 +522,28 @@ const unreveal = (o) =>
     await refresh();
   });
 
+const removePlayer = (p) =>
+  guard(async () => {
+    const entries = state.ledger.filter((r) => r.playerId === p.id).length;
+    const consequence = entries
+      ? `This also deletes ${entries} ledger ${entries === 1 ? 'entry' : 'entries'} ` +
+        `worth ${p.total} ${Math.abs(p.total) === 1 ? 'point' : 'points'}.`
+      : 'They have nothing scored, so no points are affected.';
+
+    const ok = await askConfirm({
+      title: `Remove ${p.name}?`,
+      body: `${consequence} You can add them again afterwards, but the scores will not come back.`,
+      okLabel: 'Remove player',
+      danger: true,
+    });
+    if (!ok) return;
+
+    // DELETE with the id in the query string, matching the endpoint.
+    const r = await fetch('/api/players?id=' + encodeURIComponent(p.id), { method: 'DELETE' });
+    if (!r.ok) throw new Error(await errorText(r));
+    await refresh();
+  });
+
 const deleteEntry = (row) =>
   guard(async () => {
     const what = row.objectiveName || row.label || 'this entry';
@@ -542,7 +567,7 @@ function wireUp() {
   el('gameSelect').addEventListener('change', (e) => guard(() => selectGame(e.target.value)));
 
   el('newGameBtn').addEventListener('click', () => el('newGameDlg').showModal());
-  el('addPlayerBtn').addEventListener('click', () => el('addPlayerDlg').showModal());
+  el('addPlayerBtn').addEventListener('click', openAddPlayerDialog);
   el('revealBtn').addEventListener('click', openRevealDialog);
   el('addPointsBtn').addEventListener('click', openPointsDialog);
 
@@ -664,6 +689,33 @@ function closeDialog(dialog) {
   if (form) {
     form.reset();
   }
+}
+
+/**
+ * Opens Add player with colours already in the game disabled.
+ *
+ * Disabled rather than removed, so it is visible that the colour exists and is
+ * taken — a shorter list each time would just look like options going missing.
+ */
+function openAddPlayerDialog() {
+  const taken = new Set(
+    state.players.map((p) => (p.color || '').toLowerCase()).filter(Boolean)
+  );
+  const select = el('addPlayerForm').elements.color;
+
+  for (const opt of select.options) {
+    const isTaken = opt.value && taken.has(opt.value.toLowerCase());
+    opt.disabled = isTaken;
+    const base = opt.dataset.label || opt.textContent;
+    opt.dataset.label = base;
+    opt.textContent = isTaken ? `${base} — taken` : base;
+  }
+
+  // If the current selection just became unavailable, fall back to none.
+  if (select.selectedOptions[0] && select.selectedOptions[0].disabled) {
+    select.value = '';
+  }
+  el('addPlayerDlg').showModal();
 }
 
 function openRevealDialog() {

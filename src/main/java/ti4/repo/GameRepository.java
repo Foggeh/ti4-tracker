@@ -94,6 +94,42 @@ public class GameRepository {
         return keys.getKey().longValue();
     }
 
+    /** Colours already in use in this game, so the UI can rule them out. */
+    public List<String> usedColors(long gameId) {
+        return jdbc.sql("""
+                        SELECT color FROM player
+                         WHERE game_id = :gameId AND color IS NOT NULL AND TRIM(color) <> ''
+                        """)
+                .param("gameId", gameId)
+                .query(String.class)
+                .list();
+    }
+
+    /** How many score rows a player holds, for the removal warning. */
+    public int countScoresForPlayer(long playerId) {
+        return jdbc.sql("SELECT COUNT(*) FROM score WHERE player_id = :id")
+                .param("id", playerId)
+                .query(Integer.class)
+                .single();
+    }
+
+    public Optional<Player> findPlayer(long playerId) {
+        return jdbc.sql("""
+                        SELECT id, game_id, name, faction, color, seat
+                          FROM player WHERE id = :id
+                        """)
+                .param("id", playerId)
+                .query(Player.class)
+                .optional();
+    }
+
+    /**
+     * Removes a player and, by cascade, every score row they held.
+     *
+     * <p>Relies on {@code PRAGMA foreign_keys = ON}, set per connection in
+     * application.properties. Without it SQLite ignores the cascade and leaves
+     * orphaned score rows behind.
+     */
     public void removePlayer(long playerId) {
         jdbc.sql("DELETE FROM player WHERE id = :id").param("id", playerId).update();
     }
