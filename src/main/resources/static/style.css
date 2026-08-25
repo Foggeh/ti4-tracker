@@ -145,11 +145,13 @@ main { padding: 18px; max-width: 1100px; margin: 0 auto; display: grid; gap: 18p
   flex-direction: column;
 }
 
+/* No fixed aspect ratio and no cropping: the scans are portrait 2:3, and the
+   whole point is to read the card. Letting them size naturally also means
+   replacing them with differently-shaped scans needs no CSS change. */
 .obj-card img {
   width: 100%;
+  height: auto;
   display: block;
-  aspect-ratio: 3 / 2;
-  object-fit: cover;
   background: #0a0e13;
 }
 
@@ -176,6 +178,10 @@ main { padding: 18px; max-width: 1100px; margin: 0 auto; display: grid; gap: 18p
 .badge.stage-II { color: var(--gold); border-color: var(--gold); }
 
 .obj-req { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; }
+
+/* The requirement is printed on the scan itself, so repeating it below just
+   makes the card taller. Name and badge stay as a compact header. */
+.obj-card.has-image .obj-req { display: none; }
 
 .scorers {
   display: flex;

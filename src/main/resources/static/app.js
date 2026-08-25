@@ -142,11 +142,13 @@ function renderObjectives() {
 
   for (const o of state.revealed) {
     const card = document.createElement('div');
-    card.className = 'obj-card';
+    card.className = 'obj-card' + (o.image ? ' has-image' : '');
 
+    // onerror drops the element and the has-image class, so a wrong filename
+    // falls back to the text layout instead of leaving a broken-image icon.
     const image = o.image
       ? `<img src="/images/${encodeURIComponent(o.image)}" alt="${escapeHtml(o.name)}"
-             onerror="this.remove()">`
+             onerror="this.closest('.obj-card').classList.remove('has-image'); this.remove()">`
       : '';
 
     const round = o.round ? ` · round ${o.round}` : '';

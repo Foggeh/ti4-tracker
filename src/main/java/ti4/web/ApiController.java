@@ -19,6 +19,7 @@ import ti4.domain.Objective;
 import ti4.domain.Player;
 import ti4.domain.PlayerState;
 import ti4.domain.RevealedObjective;
+import ti4.ImageResolver;
 import ti4.repo.CatalogueRepository;
 import ti4.repo.GameRepository;
 
@@ -31,10 +32,36 @@ public class ApiController {
 
     private final GameRepository games;
     private final CatalogueRepository catalogue;
+    private final ImageResolver images;
 
-    public ApiController(GameRepository games, CatalogueRepository catalogue) {
+    public ApiController(GameRepository games, CatalogueRepository catalogue,
+                         ImageResolver images) {
         this.games = games;
         this.catalogue = catalogue;
+        this.images = images;
+    }
+
+    /**
+     * Fills in an image found by naming convention. A stored value always wins,
+     * so an explicit filename can override what is on disk.
+     */
+    private Objective withImage(Objective o) {
+        if (o.image() != null) {
+            return o;
+        }
+        String found = images.resolve(o.name());
+        return found == null ? o : new Objective(
+                o.id(), o.name(), o.stage(), o.points(), o.requirement(), o.expansion(), found);
+    }
+
+    private RevealedObjective withImage(RevealedObjective o) {
+        if (o.image() != null) {
+            return o;
+        }
+        String found = images.resolve(o.name());
+        return found == null ? o : new RevealedObjective(
+                o.id(), o.name(), o.stage(), o.points(), o.requirement(), found,
+                o.round(), o.scoredBy());
     }
 
     // --- games ---------------------------------------------------------------
@@ -68,7 +95,9 @@ public class ApiController {
                 .map(p -> toPlayerState(p, totals, secrets))
                 .toList();
 
-        List<RevealedObjective> revealed = games.revealed(gameId);
+        List<RevealedObjective> revealed = games.revealed(gameId).stream()
+                .map(this::withImage)
+                .toList();
         List<LedgerRow> ledger = games.ledger(gameId);
 
         return new GameState(game, players, revealed, ledger);
@@ -89,9 +118,10 @@ public class ApiController {
 
     @GetMapping("/objectives")
     public List<Objective> objectives(@RequestParam(required = false) String expansion) {
-        return expansion == null || expansion.isBlank()
+        List<Objective> found = expansion == null || expansion.isBlank()
                 ? catalogue.all()
                 : catalogue.byExpansion(expansion);
+        return found.stream().map(this::withImage).toList();
     }
 
     @PostMapping("/objectives")
