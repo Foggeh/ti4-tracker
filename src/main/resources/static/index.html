@@ -129,7 +129,8 @@
   <form method="dialog" id="addCardForm">
     <h3>Add a card to the catalogue</h3>
     <p class="muted small">
-      For Thunder's Edge cards and homebrew. Read the values off the physical card.
+      For homebrew cards. Base and Prophecy of Kings are already loaded, and
+      Thunder's Edge adds no public objectives. Read the values off the card.
     </p>
     <label>Name<input name="name" required></label>
     <label>Stage
@@ -142,10 +143,10 @@
     <label>Requirement<textarea name="requirement" rows="2"></textarea></label>
     <label>Expansion
       <select name="expansion">
-        <option value="thunders-edge" selected>Thunder's Edge</option>
+        <option value="homebrew" selected>Homebrew</option>
         <option value="base">Base game</option>
         <option value="pok">Prophecy of Kings</option>
-        <option value="homebrew">Homebrew</option>
+        <option value="thunders-edge">Thunder's Edge</option>
       </select>
     </label>
     <label>Image filename

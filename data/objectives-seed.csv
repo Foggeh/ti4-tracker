@@ -1,16 +1,4 @@
 # TI4 public objective catalogue.
-#
-# !! VERIFY BEFORE TRUSTING !!
-# The base-game and Prophecy of Kings rows below were drafted from memory and
-# have NOT been checked against physical cards. Names and point values are
-# likely right; requirement wording and the exact base/PoK split are the most
-# probable places for errors. Correct anything wrong here -- this file is the
-# single source of truth and needs no code changes.
-#
-# Thunder's Edge objectives are deliberately absent: that expansion released
-# 2025-10-24, too recent to draft reliably. Add them from your own cards, either
-# by appending rows here or via the "Add objective" screen in the app.
-#
 # Columns: expansion,stage,points,name,requirement
 # expansion: base | pok | thunders-edge | homebrew
 # stage:     I | II

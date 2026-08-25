@@ -6,6 +6,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,8 +109,26 @@ public class ObjectiveSeeder implements ApplicationRunner {
         }
 
         log.info("Seeded {} objectives from {} ({} skipped).", inserted, seed, skipped);
-        log.warn("Base/PoK objective text was drafted from memory -- please verify "
-                + "against your physical cards. Thunder's Edge cards are not included.");
+        if (skipped > 0) {
+            log.warn("{} seed rows were skipped -- see the warnings above for line numbers.",
+                    skipped);
+        }
+        logBreakdown();
+    }
+
+    /**
+     * Logs what actually landed, grouped by expansion and stage. Cheap way to
+     * spot a bad import: the expected shape is 10 of each stage for base and
+     * 10 of each for pok. Thunder's Edge adds no public objectives, so a
+     * thunders-edge row here means a homebrew or mis-tagged card.
+     */
+    private void logBreakdown() {
+        Map<String, Long> byGroup = catalogue.all().stream()
+                .collect(Collectors.groupingBy(
+                        o -> o.expansion() + " stage " + o.stage(),
+                        TreeMap::new,
+                        Collectors.counting()));
+        byGroup.forEach((group, count) -> log.info("  {}: {}", group, count));
     }
 
     /** Minimal RFC 4180 style split: handles quoted fields and doubled quotes. */

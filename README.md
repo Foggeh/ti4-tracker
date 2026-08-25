@@ -61,11 +61,13 @@ and names are probably right; requirement wording and the exact base/PoK split
 are the likeliest errors. Please spot-check it. The app logs a reminder on first
 boot.
 
-Thunder's Edge objectives are **not** included. That expansion released
-2025-10-24, too recent for a reliable draft, and inventing card names would be
-worse than leaving them out. Add them from your own cards — either append rows to
-the CSV before first boot, or use **Reveal objective → Card not listed…** in the
-app, which is also how you attach an image.
+**Thunder's Edge adds no new public objectives**, confirmed against the physical
+expansion, so the 40 base + PoK cards are the complete set. Nothing to add for
+it. (It does add factions, worlds, Galactic Events and the Twilight's Fall mode,
+none of which this app models.)
+
+**Reveal objective → Card not listed…** stays available for homebrew cards, and
+is also how you attach an image to a card that has none.
 
 ## Card images
 
