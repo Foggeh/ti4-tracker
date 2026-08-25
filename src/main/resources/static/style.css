@@ -290,6 +290,17 @@ button.tiny {
 
 button.danger:hover { border-color: var(--p-red); color: var(--p-red); }
 
+/* Not disabled: it still opens a dialog saying why it cannot be removed, which
+   is the only way to convey that on a touch screen. */
+button.locked { color: #5d6672; cursor: help; }
+button.locked:hover { border-color: var(--line); color: var(--muted); }
+
+button.destructive {
+  background: var(--p-red);
+  border-color: var(--p-red);
+  color: #fff;
+}
+
 dialog {
   background: var(--panel);
   color: var(--text);

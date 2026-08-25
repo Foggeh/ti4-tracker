@@ -12,6 +12,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
@@ -58,6 +59,16 @@ public class ApiExceptionHandler {
             MissingServletRequestParameterException e) {
         return ResponseEntity.badRequest()
                 .body(body(400, "Missing required parameter: " + e.getParameterName()));
+    }
+
+    /** A malformed parameter is the caller's fault, so 400 rather than 500. */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(
+            MethodArgumentTypeMismatchException e) {
+        String value = String.valueOf(e.getValue());
+        return ResponseEntity.badRequest().body(body(400,
+                "Parameter '" + e.getName() + "' could not be read from "
+                        + (value.isEmpty() ? "an empty value" : "'" + value + "'")));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

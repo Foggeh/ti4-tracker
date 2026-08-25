@@ -190,10 +190,27 @@ public class ApiController {
         return Map.of("ok", true);
     }
 
+    /**
+     * Takes an objective back off the board.
+     *
+     * <p>Refused while any player has scored it. Removing it would drop those
+     * points out of their totals with nothing on screen to explain the change,
+     * and a scoring tracker that quietly loses points is worse than one that
+     * makes you undo them deliberately.
+     */
     @PostMapping("/unreveal")
     public Map<String, Object> unreveal(
             @RequestParam long gameId,
             @RequestParam long objectiveId) {
+
+        int scored = games.countScoresFor(gameId, objectiveId);
+        if (scored > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    scored == 1
+                            ? "1 player has scored this objective. Unscore them first, then remove it."
+                            : scored + " players have scored this objective. "
+                                    + "Unscore them first, then remove it.");
+        }
         games.unreveal(gameId, objectiveId);
         return Map.of("ok", true);
     }

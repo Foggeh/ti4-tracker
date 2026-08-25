@@ -178,6 +178,10 @@ function renderObjectives() {
     const card = document.createElement('div');
     card.className = 'obj-card' + (o.image ? ' has-image' : '');
 
+    // Removable only while nothing has been scored on it. Kept clickable rather
+    // than disabled so a tap explains why -- there is no hover on a phone.
+    const locked = o.scoredBy.length > 0;
+
     // onerror drops the element and the has-image class, so a wrong filename
     // falls back to the text layout instead of leaving a broken-image icon.
     const image = o.image
@@ -198,7 +202,12 @@ function renderObjectives() {
       </div>
       <div class="scorers"></div>
       <div class="obj-actions">
-        <button class="tiny danger" data-unreveal="${o.id}">Remove from game</button>
+        <button class="tiny ${locked ? 'locked' : 'danger'}" data-unreveal="${o.id}"
+                title="${locked
+                  ? 'Scored by ' + o.scoredBy.length + ' player(s) — unscore them first'
+                  : 'Take this objective back off the board'}">
+          Remove from game${locked ? ' 🔒' : ''}
+        </button>
       </div>`;
 
     const scorers = card.querySelector('.scorers');
@@ -261,6 +270,45 @@ async function guard(fn) {
   }
 }
 
+/**
+ * In-app replacement for window.confirm(), which some browsers suppress: it
+ * returns false without prompting, so a guarded action silently does nothing.
+ *
+ * Both buttons are type="button" and resolve explicitly, so this depends on
+ * neither the dialog `close` event nor form submission.
+ */
+function askConfirm({ title, body, okLabel = 'Confirm', danger = false }) {
+  const dialog = el('confirmDlg');
+  const okBtn = el('confirmOk');
+  const cancelBtn = el('confirmCancel');
+
+  el('confirmTitle').textContent = title;
+  el('confirmBody').textContent = body || '';
+  okBtn.textContent = okLabel;
+  okBtn.classList.toggle('destructive', danger);
+
+  return new Promise((resolve) => {
+    const finish = (result) => {
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      dialog.removeEventListener('cancel', onEscape);
+      if (dialog.open) {
+        dialog.close();
+      }
+      resolve(result);
+    };
+    const onOk = () => finish(true);
+    const onCancel = () => finish(false);
+    const onEscape = () => finish(false);
+
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    dialog.addEventListener('cancel', onEscape);
+    dialog.showModal();
+    cancelBtn.focus(); // destructive action should not be the default
+  });
+}
+
 const toggleScore = (playerId, objectiveId) =>
   guard(async () => {
     await api.post('/api/score', { gameId, playerId, objectiveId });
@@ -269,11 +317,32 @@ const toggleScore = (playerId, objectiveId) =>
 
 const unreveal = (o) =>
   guard(async () => {
-    const scored = o.scoredBy.length;
-    const extra = scored
-      ? `\n\nThis also deletes ${scored} scoring ${scored === 1 ? 'entry' : 'entries'} against it.`
-      : '';
-    if (!confirm(`Remove "${o.name}" from this game?${extra}`)) return;
+    // The button is disabled in this case; this is the belt to the server's
+    // braces, in case a stale page is clicked after someone else scored it.
+    const n = o.scoredBy.length;
+    if (n > 0) {
+      await askConfirm({
+        title: 'Cannot remove this objective',
+        body:
+          `${n === 1 ? '1 player has' : n + ' players have'} scored "${o.name}". ` +
+          `Unscore ${n === 1 ? 'them' : 'them all'} first — tap the highlighted ` +
+          'name on the card — then remove it.',
+        okLabel: 'OK',
+      });
+      return;
+    }
+
+    const ok = await askConfirm({
+      title: 'Remove this objective?',
+      body:
+        `"${o.name}" will be taken off the board for this game. ` +
+        'Nothing has been scored on it, so no points change. ' +
+        'You can reveal it again afterwards.',
+      okLabel: 'Remove',
+      danger: true,
+    });
+    if (!ok) return;
+
     await api.post('/api/unreveal', { gameId, objectiveId: o.id });
     await refresh();
   });
@@ -281,7 +350,16 @@ const unreveal = (o) =>
 const deleteEntry = (row) =>
   guard(async () => {
     const what = row.objectiveName || row.label || 'this entry';
-    if (!confirm(`Remove "${what}" (+${row.points})?`)) return;
+    const who = state.players.find((p) => p.id === row.playerId);
+    const ok = await askConfirm({
+      title: 'Remove this score?',
+      body:
+        `${who ? who.name : 'This player'} loses ` +
+        `${row.points} ${Math.abs(row.points) === 1 ? 'point' : 'points'} from "${what}".`,
+      okLabel: 'Remove',
+      danger: true,
+    });
+    if (!ok) return;
     await api.post('/api/points/delete', { id: row.id });
     await refresh();
   });

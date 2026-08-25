@@ -113,15 +113,26 @@ public class GameRepository {
                 .update();
     }
 
-    /**
-     * Undo a misclick. Any points already scored against the objective go with
-     * it, otherwise they would linger in the ledger with nothing to explain them.
-     */
-    public void unreveal(long gameId, long objectiveId) {
-        jdbc.sql("DELETE FROM score WHERE game_id = :gameId AND objective_id = :objectiveId")
+    /** How many players have scored this objective in this game. */
+    public int countScoresFor(long gameId, long objectiveId) {
+        return jdbc.sql("""
+                        SELECT COUNT(*) FROM score
+                         WHERE game_id = :gameId AND objective_id = :objectiveId
+                        """)
                 .param("gameId", gameId)
                 .param("objectiveId", objectiveId)
-                .update();
+                .query(Integer.class)
+                .single();
+    }
+
+    /**
+     * Undo a misclick by taking an objective back off the board.
+     *
+     * <p>Callers must check {@link #countScoresFor} first: an objective with
+     * points on it is not removable, because deleting it would silently drop
+     * those points from players' totals. Unscore the players first.
+     */
+    public void unreveal(long gameId, long objectiveId) {
         jdbc.sql("""
                         DELETE FROM game_objective
                          WHERE game_id = :gameId AND objective_id = :objectiveId
