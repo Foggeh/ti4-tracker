@@ -72,15 +72,29 @@ public class ApiController {
                 .map(s -> s.name().toLowerCase(Locale.ROOT))
                 .collect(Collectors.toCollection(HashSet::new));
 
-        List<PointSource> result = new ArrayList<>(seeded);
+        List<PointSource> result = new ArrayList<>();
+        for (PointSource s : seeded) {
+            result.add(withImage(s));
+        }
         for (String kind : List.of("secret", "other")) {
             for (String label : games.usedLabels(kind)) {
                 if (known.add(label.toLowerCase(Locale.ROOT))) {
-                    result.add(new PointSource(kind, 1, label, "Used before", true));
+                    result.add(withImage(
+                            new PointSource(kind, 1, label, "Used before", null, true)));
                 }
             }
         }
         return result;
+    }
+
+    /** Same naming-convention lookup the public objectives use. */
+    private PointSource withImage(PointSource s) {
+        if (s.image() != null) {
+            return s;
+        }
+        String found = images.resolve(s.name());
+        return found == null ? s : new PointSource(
+                s.kind(), s.points(), s.name(), s.group(), found, s.learned());
     }
 
     /**

@@ -1,7 +1,10 @@
 # Options for the Label dropdown in "Add points", split by kind.
 #
 # Columns: kind,points,name,group
-# kind:   secret | other
+# kind:   secret | secret-omega | other
+#         secret-omega appears in the gallery only, never in the dropdown -- the
+#         Omega reprints are the same objective, so offering both would just be
+#         two ways to log one thing.
 # points: the usual value, prefilled when picked. Still editable.
 # group:  optional; becomes the heading the option sits under in the dropdown.
 #
@@ -55,7 +58,7 @@ secret,1,Fuel the War Machine,Status phase
 secret,1,Gather a Mighty Fleet,Status phase
 secret,1,Learn the Secrets of the Cosmos,Status phase
 secret,1,Master the Laws of Physics,Status phase
-secret,1,Mine Rare Metals,Status phase
+secret,1,Mine Rare Minerals,Status phase
 secret,1,Monopolize Production,Status phase
 secret,1,Occupy the Seat of the Empire,Status phase
 secret,1,Threaten Enemies,Status phase
@@ -74,3 +77,11 @@ secret,1,Strengthen Bonds,Status phase
 # Agenda phase -- Prophecy of Kings only
 secret,1,Dictate Policy,Agenda phase
 secret,1,Drive the Debate,Agenda phase
+#
+# --- Omega reprints (gallery only) ---------------------------------------------
+# Codex reprints of three action-phase secrets. Named "(Omega)" rather than with
+# the omega glyph because the image matcher strips non-alphanumerics, so a glyph
+# would collide with the base card's filename.
+secret-omega,1,Make an Example of Their World (Omega),Action phase · Omega
+secret-omega,1,Turn Their Fleets to Dust (Omega),Action phase · Omega
+secret-omega,1,Fight With Precision (Omega),Action phase · Omega

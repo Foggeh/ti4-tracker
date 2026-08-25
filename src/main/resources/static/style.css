@@ -341,6 +341,138 @@ dialog menu {
   padding: 0;
 }
 
+/* --- gallery edge tabs ----------------------------------------------------- */
+
+.side-tabs {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 4;
+}
+
+.side-tabs button {
+  writing-mode: vertical-rl;
+  padding: 14px 7px;
+  border-radius: 8px 0 0 8px;
+  border-right: 0;
+  background: var(--panel);
+  color: var(--muted);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.side-tabs button:hover {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+/* --- gallery --------------------------------------------------------------- */
+
+.gallery-dlg {
+  width: 96vw;
+  max-width: 1180px;
+  height: 90vh;
+  max-height: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.gallery-dlg[open] { display: flex; }
+
+.gallery-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.gallery-tabs { display: flex; gap: 6px; }
+
+.gtab { font-size: 13px; background: transparent; }
+.gtab.active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #1a1205;
+  font-weight: 600;
+}
+
+#galleryFilter { flex: 1; min-width: 140px; }
+
+.gallery-grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+  padding: 14px;
+  align-content: start;
+}
+
+.gcard {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Whole card here, deliberately uncropped: the crop on the board view exists to
+   save vertical space, but a gallery is for reading the card. */
+.gcard img { width: 100%; height: auto; display: block; background: #0a0e13; }
+
+.gcard-body { padding: 8px 10px; }
+.gcard-name { font-size: 13px; font-weight: 600; }
+.gcard-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.gcard-req { font-size: 11.5px; color: var(--muted); margin: 6px 0 0; }
+
+.gcard-noimage {
+  aspect-ratio: 2 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #5d6672;
+  background: repeating-linear-gradient(45deg, #11161d, #11161d 8px, #0e1319 8px, #0e1319 16px);
+}
+
+/* --- hover card preview ---------------------------------------------------- */
+
+.card-preview {
+  position: fixed;
+  z-index: 20;
+  pointer-events: none;
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .6);
+  max-width: 260px;
+}
+
+.card-preview img { display: block; width: 100%; height: auto; border-radius: 5px; }
+.card-preview-name {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 4px 4px 2px;
+}
+
+.ledger .what.previewable {
+  cursor: zoom-in;
+  border-bottom: 1px dotted var(--line);
+}
+
 /* --- player colours -------------------------------------------------------- */
 
 .c-blue   { border-left-color: var(--p-blue); }
@@ -357,4 +489,25 @@ dialog menu {
   .player-card .score { font-size: 28px; }
   .ledger li { flex-wrap: wrap; }
   .ledger .who { min-width: 0; }
+
+  /* Vertical edge tabs are awkward next to a narrow column; sit them along the
+     bottom instead, where a thumb reaches. */
+  .side-tabs {
+    top: auto;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    transform: none;
+    flex-direction: row;
+  }
+  .side-tabs button {
+    writing-mode: horizontal-tb;
+    flex: 1;
+    border-radius: 8px 8px 0 0;
+    border-right: 1px solid var(--line);
+    padding: 10px 8px;
+  }
+  .gallery-dlg { width: 100vw; height: 100vh; border-radius: 0; }
+  .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .card-preview { max-width: 200px; }
 }

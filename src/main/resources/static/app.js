@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     catalogue = await api.get('/api/objectives');
     pointSources = await api.get('/api/point-sources');
+    rebuildCardIndex();
     await loadFactions();
     await loadGames();
   } catch (e) {
@@ -238,6 +239,7 @@ function renderObjectives() {
 function renderLedger() {
   const host = el('ledger');
   host.innerHTML = '';
+  hidePreview();
 
   if (state.ledger.length === 0) {
     host.innerHTML = '<li class="muted">Nothing scored yet.</li>';
@@ -259,8 +261,165 @@ function renderLedger() {
       <span class="pts">+${row.points}</span>
       <button class="tiny danger" title="Remove this entry">✕</button>`;
     li.querySelector('button').addEventListener('click', () => deleteEntry(row));
+
+    // Any ledger entry whose name matches a card we have a scan for gets a
+    // hover preview -- secrets and public objectives alike.
+    const card = cards.get(what.toLowerCase());
+    if (card && card.image) {
+      const label = li.querySelector('.what');
+      label.classList.add('previewable');
+      label.title = 'Hover to see the card';
+      attachPreview(label, card);
+    }
+
     host.append(li);
   }
+}
+
+// --- card index, hover preview, gallery --------------------------------------
+
+/** name (lowercased) -> { name, image, requirement, meta } for every known card. */
+let cards = new Map();
+
+function rebuildCardIndex() {
+  const index = new Map();
+  for (const o of catalogue) {
+    index.set(o.name.toLowerCase(), {
+      name: o.name,
+      image: o.image,
+      requirement: o.requirement,
+      meta: `Stage ${o.stage} · ${o.points} VP · ${EXPANSION_LABELS[o.expansion] || o.expansion}`,
+    });
+  }
+  for (const s of pointSources) {
+    // Public objectives win on a name clash: they carry requirement text.
+    if (index.has(s.name.toLowerCase())) continue;
+    index.set(s.name.toLowerCase(), {
+      name: s.name,
+      image: s.image,
+      requirement: null,
+      meta: s.group || (s.kind === 'secret' ? 'Secret objective' : 'Point source'),
+    });
+  }
+  cards = index;
+}
+
+function hidePreview() {
+  const box = el('cardPreview');
+  if (box) box.hidden = true;
+}
+
+/**
+ * Shows a card scan next to the cursor. Also toggles on click, because hover
+ * does not exist on a phone and this is used at a table.
+ */
+function attachPreview(target, card) {
+  const box = el('cardPreview');
+  const img = box.querySelector('img');
+
+  // Remembered so the box can be repositioned once the image has loaded and the
+  // box finally has its real height. Measuring before that put it off-screen.
+  let pointer = { clientX: 0, clientY: 0 };
+
+  const place = (at) => {
+    pointer = { clientX: at.clientX, clientY: at.clientY };
+    const pad = 14;
+    const rect = box.getBoundingClientRect();
+    const maxX = window.innerWidth - rect.width - pad;
+    const maxY = window.innerHeight - rect.height - pad;
+    let x = at.clientX + pad;
+    let y = at.clientY + pad;
+    if (x > maxX) x = at.clientX - rect.width - pad;
+    if (y > maxY) y = at.clientY - rect.height - pad;
+    box.style.left = `${Math.max(pad, Math.min(x, Math.max(pad, maxX)))}px`;
+    box.style.top = `${Math.max(pad, Math.min(y, Math.max(pad, maxY)))}px`;
+  };
+
+  const show = (ev) => {
+    img.onload = () => place(pointer);
+    img.src = '/images/' + encodeURIComponent(card.image);
+    img.alt = card.name;
+    box.querySelector('.card-preview-name').textContent = card.name;
+    box.hidden = false;
+    place(ev);
+  };
+
+  target.addEventListener('mouseenter', show);
+  target.addEventListener('mousemove', place);
+  target.addEventListener('mouseleave', hidePreview);
+  target.addEventListener('click', (ev) => {
+    if (box.hidden) show(ev);
+    else hidePreview();
+  });
+}
+
+let galleryKind = 'public';
+
+function openGallery(kind) {
+  galleryKind = kind;
+  el('galleryFilter').value = '';
+  renderGallery();
+  el('galleryDlg').showModal();
+}
+
+function renderGallery() {
+  const filter = el('galleryFilter').value.trim().toLowerCase();
+  const grid = el('galleryGrid');
+  const empty = el('galleryEmpty');
+  grid.innerHTML = '';
+
+  for (const tab of document.querySelectorAll('.gtab')) {
+    tab.classList.toggle('active', tab.dataset.gtab === galleryKind);
+  }
+
+  const items =
+    galleryKind === 'public'
+      ? catalogue.map((o) => ({
+          name: o.name,
+          image: o.image,
+          requirement: o.requirement,
+          meta: `Stage ${o.stage} · ${o.points} VP · ${EXPANSION_LABELS[o.expansion] || o.expansion}`,
+        }))
+      : // Omega reprints show here but never in the dropdown.
+        pointSources
+          .filter((s) => s.kind === 'secret' || s.kind === 'secret-omega')
+          .map((s) => ({
+            name: s.name,
+            image: s.image,
+            requirement: null,
+            meta: s.group || 'Secret objective',
+          }));
+
+  const shown = items.filter(
+    (i) =>
+      !filter ||
+      `${i.name} ${i.requirement || ''} ${i.meta}`.toLowerCase().includes(filter)
+  );
+
+  const withImages = shown.filter((i) => i.image).length;
+  el('galleryCount').textContent =
+    `${shown.length} card${shown.length === 1 ? '' : 's'}` +
+    (withImages < shown.length ? ` · ${shown.length - withImages} without a scan` : '');
+
+  for (const item of shown) {
+    const cell = document.createElement('div');
+    cell.className = 'gcard';
+    const picture = item.image
+      ? `<img src="/images/${encodeURIComponent(item.image)}" alt="${escapeHtml(item.name)}"
+              loading="lazy">`
+      : `<div class="gcard-noimage">no scan yet</div>`;
+    cell.innerHTML = `
+      ${picture}
+      <div class="gcard-body">
+        <div class="gcard-name">${escapeHtml(item.name)}</div>
+        <div class="gcard-meta">${escapeHtml(item.meta)}</div>
+        ${item.requirement ? `<p class="gcard-req">${escapeHtml(item.requirement)}</p>` : ''}
+      </div>`;
+    grid.append(cell);
+  }
+
+  empty.hidden = shown.length > 0;
+  empty.textContent = filter ? 'Nothing matches that filter.' : 'No cards to show.';
 }
 
 function escapeHtml(s) {
@@ -404,6 +563,7 @@ function wireUp() {
     await api.post('/api/points', { ...v, gameId });
     // Re-read so a label just typed is offered next time without a reload.
     pointSources = await api.get('/api/point-sources');
+    rebuildCardIndex();
     await refresh();
   });
 
@@ -449,6 +609,25 @@ function wireUp() {
   });
   el('pointsPlayer').addEventListener('change', updatePointsDialog);
   el('pointsLabelSelect').addEventListener('change', onLabelChoice);
+
+  // Gallery: edge tabs, in-dialog tabs, filter, close.
+  document.querySelectorAll('.side-tabs button').forEach((btn) => {
+    btn.addEventListener('click', () => openGallery(btn.dataset.gallery));
+  });
+  document.querySelectorAll('.gtab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      galleryKind = tab.dataset.gtab;
+      renderGallery();
+    });
+  });
+  el('galleryFilter').addEventListener('input', renderGallery);
+  el('galleryClose').addEventListener('click', () => el('galleryDlg').close());
+
+  // A preview left showing after a scroll or a click elsewhere looks stuck.
+  window.addEventListener('scroll', hidePreview, { passive: true });
+  document.addEventListener('click', (ev) => {
+    if (!ev.target.closest('.previewable')) hidePreview();
+  });
 }
 
 /**

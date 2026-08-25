@@ -26,6 +26,9 @@ public class PointSourceCatalogue {
 
     private static final Logger log = LoggerFactory.getLogger(PointSourceCatalogue.class);
 
+    /** secret-omega is gallery-only; the dropdown filters on kind. */
+    private static final List<String> KINDS = List.of("secret", "secret-omega", "other");
+
     private final List<PointSource> sources;
 
     public PointSourceCatalogue(Ti4Properties properties) {
@@ -63,15 +66,15 @@ public class PointSourceCatalogue {
                 }
 
                 String kind = fields.get(0);
-                if (!kind.equals("secret") && !kind.equals("other")) {
-                    log.warn("Point-source line {} has kind '{}', expected secret or other; "
-                            + "skipped.", lineNo, kind);
+                if (!KINDS.contains(kind)) {
+                    log.warn("Point-source line {} has kind '{}', expected one of {}; skipped.",
+                            lineNo, kind, KINDS);
                     continue;
                 }
                 String group = fields.size() > 3 ? Csv.emptyToNull(fields.get(3)) : null;
                 try {
                     loaded.add(new PointSource(kind, Integer.parseInt(fields.get(1)),
-                            fields.get(2), group, false));
+                            fields.get(2), group, null, false));
                 } catch (NumberFormatException e) {
                     log.warn("Point-source line {} has non-numeric points '{}'; skipped.",
                             lineNo, fields.get(1));

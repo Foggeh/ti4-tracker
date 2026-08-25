@@ -56,6 +56,33 @@
 
 <p id="noGame" class="empty" hidden>No games yet. Create one to get started.</p>
 
+<!-- Edge tabs to the card galleries. -->
+<nav class="side-tabs" aria-label="Card galleries">
+  <button type="button" data-gallery="public">Public</button>
+  <button type="button" data-gallery="secret">Secret</button>
+</nav>
+
+<dialog id="galleryDlg" class="gallery-dlg">
+  <div class="gallery-head">
+    <div class="gallery-tabs">
+      <button type="button" class="gtab" data-gtab="public">Public objectives</button>
+      <button type="button" class="gtab" data-gtab="secret">Secret objectives</button>
+    </div>
+    <input id="galleryFilter" type="search" placeholder="Filter by name or text"
+           autocomplete="off">
+    <span id="galleryCount" class="muted small"></span>
+    <button type="button" class="ghost" id="galleryClose">Close</button>
+  </div>
+  <div id="galleryGrid" class="gallery-grid"></div>
+  <p id="galleryEmpty" class="empty" hidden></p>
+</dialog>
+
+<!-- Follows the cursor when hovering a scored card in the ledger. -->
+<div id="cardPreview" class="card-preview" hidden aria-hidden="true">
+  <img alt="">
+  <span class="card-preview-name"></span>
+</div>
+
 <!-- ---------------------------------------------------------------- dialogs -->
 
 <dialog id="newGameDlg">
