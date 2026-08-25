@@ -379,12 +379,16 @@ dialog menu {
   height: 90vh;
   max-height: none;
   padding: 0;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
 }
 
-.gallery-dlg[open] { display: flex; }
+/* display belongs ONLY here. Setting it on the rule above overrode the browser's
+   own dialog:not([open]) { display: none }, so the entire gallery rendered inline
+   in the page under the score ledger whether it was open or not. */
+.gallery-dlg[open] {
+  display: flex;
+  flex-direction: column;
+}
 
 .gallery-head {
   display: flex;
