@@ -78,6 +78,11 @@ a public GitHub repo is a different proposition from a folder on your own
 machine. `.gitignore` keeps them local due to possible legal issues regarding
 copyright laws.
 
+So a fresh clone has no scans. Cards fall back to their text layout and the
+gallery shows "no scan yet" -- the app is built to degrade that way rather than
+break. The screenshots at the top are the only place this repo shows what it
+looks like with the art in place.
+
 ## Running it
 
 Easiest is the green run arrow on `Ti4TrackerApplication` in IntelliJ, or the
@@ -86,6 +91,18 @@ Maven panel's `spring-boot:run`.
 Then open <http://localhost:8080>. Other devices at the table use the PC's
 LAN address -- currently `http://192.168.100.9:8080`. Windows Firewall may need
 to allow inbound 8080 the first time another device connects.
+
+From a fresh clone, with no Maven installed:
+
+```bash
+./mvnw spring-boot:run       # macOS, Linux, Git Bash
+mvnw.cmd spring-boot:run     # Windows cmd or PowerShell
+```
+
+The wrapper fetches Maven itself on first run, so a JDK 21 or newer is the only
+prerequisite. Start it from the project root: `data/ti4.db` is a relative path,
+so launching from elsewhere quietly creates an empty database next to wherever
+you started instead of opening the real one.
 
 ## Layout
 
