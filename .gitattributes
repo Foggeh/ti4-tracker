@@ -1,0 +1,6 @@
+# The wrapper is a POSIX shell script: it must keep LF endings wherever it is
+# checked out, or a Linux shell reads the CR and fails with "bad interpreter".
+mvnw text eol=lf
+
+# Its Windows counterpart wants the opposite.
+*.cmd text eol=crlf
