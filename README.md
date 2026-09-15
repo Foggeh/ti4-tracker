@@ -204,6 +204,41 @@ set so Chrome names the saved file after the game.
   outcomes like Shard of the Throne, relics like the Crown of Emphidia — go
   through the same manual entry with a label
 
+## Testing
+
+```bash
+./mvnw test
+```
+
+22 tests, in two layers.
+
+`StandingsCalculatorTest` covers the end-of-game arithmetic with no Spring and
+no database. The calculation was pulled out of the controller into
+`StandingsCalculator` for exactly this reason: everything it needs is passed in,
+including the timestamp, so the rules that are easy to get wrong and impossible
+to spot going wrong at the table can be asserted directly. A column for a source
+nobody scored, a tie quietly resolved in favour of whoever was added first, a
+total that stops matching the parts it is made of.
+
+`ScoringApiTest` drives the real API against a throwaway SQLite file in a temp
+directory, asserting on the JSON rather than on deserialised objects -- the JSON
+is the contract the browser consumes, and a field quietly renamed would break it
+while a Java-side assertion still passed. Only the datasource URL is overridden,
+so the schema, the CSV seeding and the foreign-key PRAGMA are the application's
+own configuration and under test too.
+
+That last one matters more than it looks. SQLite defaults `foreign_keys` to OFF
+per connection, which would make every `ON DELETE CASCADE` in `schema.sql`
+decorative. The cascade test was checked by turning the PRAGMA off and
+confirming it fails -- with it off, a removed player's score rows survive as
+orphans and the ledger still counts them. A test guarding a silent failure is
+worth nothing until you have watched it fail.
+
+Each test makes its own game. Games are independent, so that is enough isolation
+without truncating tables in between.
+
+Not covered: the front end. `app.js` is verified by hand.
+
 ## Screenshots
 
 The board mid-game. Standings across the top with the leader highlighted, then
