@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Finds a card scan for an objective by name, so images need no data entry:
- * name the file after the card and it is picked up.
+ * name the file after the card, and it is picked up.
  *
  * <p>Matching is deliberately forgiving. "Erect a Monument" is found by
  * {@code erect-a-monument.jpg}, {@code Erect A Monument.PNG},

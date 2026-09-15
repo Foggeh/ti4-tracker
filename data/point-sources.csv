@@ -4,7 +4,9 @@
 # kind:   secret | secret-omega | other
 #         secret-omega appears in the gallery only, never in the dropdown -- the
 #         Omega reprints are the same objective, so offering both would just be
-#         two ways to log one thing.
+#         two ways to log one thing. But I kept both of them so people at the
+#         table can decide which version of the card they want to play and still
+#         be able to see the image of it when needed
 # points: the usual value, prefilled when picked. Still editable.
 # group:  optional; becomes the heading the option sits under in the dropdown.
 #
