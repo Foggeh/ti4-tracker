@@ -88,9 +88,17 @@ looks like with the art in place.
 Easiest is the green run arrow on `Ti4TrackerApplication` in IntelliJ, or the
 Maven panel's `spring-boot:run`.
 
-Then open <http://localhost:8080>. Other devices at the table use the PC's
-LAN address -- currently `http://192.168.100.9:8080`. Windows Firewall may need
-to allow inbound 8080 the first time another device connects.
+On startup it logs both addresses -- the local one and the LAN one the phones
+need -- so there is nothing to look up:
+
+```
+TI4 tracker is ready.
+  On this PC:      http://localhost:8080
+  At the table:    http://192.168.1.42:8080
+```
+
+IntelliJ turns those into clickable links in the console. Windows Firewall may
+need to allow inbound 8080 the first time another device connects.
 
 From a fresh clone, with no Maven installed:
 
