@@ -132,6 +132,9 @@ async function loadGames() {
 async function selectGame(id) {
   gameId = Number(id);
   localStorage.setItem(LAST_GAME_KEY, String(gameId));
+  // Player ids do not carry across games, so a filter left on would silently
+  // match nothing in the new one.
+  resetLedgerFilter();
   await refresh();
 }
 
@@ -239,22 +242,86 @@ function renderObjectives() {
   }
 }
 
+/**
+ * What the ledger is currently narrowed to. Kept out of the DOM so it survives a
+ * refresh(), which rebuilds the list but not the controls.
+ */
+const ledgerFilter = { kind: '', playerId: '', text: '' };
+
+function resetLedgerFilter() {
+  ledgerFilter.kind = '';
+  ledgerFilter.playerId = '';
+  ledgerFilter.text = '';
+  el('ledgerFilter').value = '';
+  el('ledgerPlayer').value = '';
+}
+
+const ledgerFilterActive = () =>
+  Boolean(ledgerFilter.kind || ledgerFilter.playerId || ledgerFilter.text);
+
+/** Free text searches the player, the kind and the card name at once. */
+function ledgerMatches(row, nameOf) {
+  if (ledgerFilter.kind && row.kind !== ledgerFilter.kind) return false;
+  if (ledgerFilter.playerId && String(row.playerId) !== ledgerFilter.playerId) return false;
+  if (!ledgerFilter.text) return true;
+  const what = row.objectiveName || row.label || '';
+  return `${nameOf(row.playerId)} ${row.kind} ${what}`
+    .toLowerCase()
+    .includes(ledgerFilter.text);
+}
+
+/** Rebuilds the player dropdown, keeping the current choice where it still exists. */
+function fillLedgerPlayers() {
+  const select = el('ledgerPlayer');
+  select.innerHTML = '<option value="">All players</option>';
+  for (const p of state.players) {
+    const opt = document.createElement('option');
+    opt.value = String(p.id);
+    opt.textContent = p.name;
+    select.append(opt);
+  }
+  // Someone removed mid-filter would otherwise leave an empty list with nothing
+  // on screen explaining why.
+  if (ledgerFilter.playerId && !state.players.some((p) => String(p.id) === ledgerFilter.playerId)) {
+    ledgerFilter.playerId = '';
+  }
+  select.value = ledgerFilter.playerId;
+}
+
 function renderLedger() {
   const host = el('ledger');
   host.innerHTML = '';
   hidePreview();
+  fillLedgerPlayers();
 
-  if (state.ledger.length === 0) {
-    host.innerHTML = '<li class="muted">Nothing scored yet.</li>';
-    return;
+  for (const chip of document.querySelectorAll('#ledgerKinds .chip')) {
+    chip.classList.toggle('on', chip.dataset.kind === ledgerFilter.kind);
   }
+  el('ledgerClear').hidden = !ledgerFilterActive();
 
   const nameOf = (id) => {
     const p = state.players.find((x) => x.id === id);
     return p ? p.name : 'unknown';
   };
 
-  for (const row of [...state.ledger].reverse()) {
+  const shown = state.ledger.filter((row) => ledgerMatches(row, nameOf));
+  const points = shown.reduce((sum, row) => sum + row.points, 0);
+
+  el('ledgerCount').textContent = state.ledger.length === 0
+    ? ''
+    : (ledgerFilterActive()
+        ? `${shown.length} of ${state.ledger.length} entries`
+        : `${shown.length} entr${shown.length === 1 ? 'y' : 'ies'}`) +
+      ` · ${points} ${Math.abs(points) === 1 ? 'point' : 'points'}`;
+
+  el('ledgerEmpty').hidden = shown.length > 0 || state.ledger.length === 0;
+
+  if (state.ledger.length === 0) {
+    host.innerHTML = '<li class="muted">Nothing scored yet.</li>';
+    return;
+  }
+
+  for (const row of [...shown].reverse()) {
     const li = document.createElement('li');
     const what = row.objectiveName || row.label || '(no label)';
     li.innerHTML = `
@@ -492,6 +559,154 @@ function renderGallery() {
   empty.textContent = filter ? 'Nothing matches that filter.' : 'No cards to show.';
 }
 
+// --- end-of-game standings ---------------------------------------------------
+
+/** Kept so Save as PDF can re-read the shape of the table it is printing. */
+let lastReport = null;
+
+const openStandings = () =>
+  guard(async () => {
+    lastReport = await api.get('/api/standings?game=' + gameId);
+    el('reportSheet').innerHTML = standingsHtml(lastReport);
+    el('standingsNote').textContent = lastReport.reachedTarget
+      ? `Target of ${lastReport.game.vpTarget} VP reached`
+      : `Nobody has reached ${lastReport.game.vpTarget} VP — this is a snapshot`;
+    el('standingsDlg').showModal();
+  });
+
+/**
+ * The printable sheet, built as one string so the same markup can be cloned into
+ * #printRoot untouched -- what is on screen is exactly what comes out.
+ */
+function standingsHtml(r) {
+  const columns = r.otherColumns;
+
+  // With a single other source its column already is the total; a second one
+  // makes a summing column worth the width.
+  const showOtherTotal = columns.length > 1;
+
+  const header = `
+    <tr>
+      <th class="num">#</th>
+      <th>Player</th>
+      <th class="num">Total</th>
+      <th class="num">Public</th>
+      <th class="num">Secrets</th>
+      ${columns.map((c) => `<th class="num src">${escapeHtml(c)}</th>`).join('')}
+      ${showOtherTotal ? '<th class="num">Other</th>' : ''}
+    </tr>`;
+
+  const rows = r.rows
+    .map(
+      (row) => `
+    <tr${row.rank === 1 && r.winners.length ? ' class="top"' : ''}>
+      <td class="num rank">${row.rank}</td>
+      <td class="who">
+        <span class="dot d-${escapeHtml(row.color || 'none')}"></span>
+        <span class="pname">${escapeHtml(row.name)}</span>
+        ${row.faction ? `<span class="pfaction">${escapeHtml(row.faction)}</span>` : ''}
+      </td>
+      <td class="num total">${row.total}</td>
+      ${scoreCell(row.publicPoints, row.publicCount)}
+      ${scoreCell(row.secretPoints, row.secretCount)}
+      ${columns.map((c) => scoreCell(row.bySource[c] || 0)).join('')}
+      ${showOtherTotal ? scoreCell(row.otherPoints) : ''}
+    </tr>`
+    )
+    .join('');
+
+  const players = r.rows.length;
+  const entries = r.entryCount;
+
+  return `
+    <header class="sheet-head">
+      <h2>${escapeHtml(r.game.name)}</h2>
+      <p class="sheet-sub">
+        Twilight Imperium 4E · final standings · first to ${r.game.vpTarget} VP ·
+        ${players} player${players === 1 ? '' : 's'} · ${escapeHtml(sheetDate(r.generatedAt))}
+      </p>
+    </header>
+    <p class="sheet-verdict">${escapeHtml(verdict(r))}</p>
+    <!-- The table scrolls inside its own box so a phone does not drag the
+         heading off-screen along with the wide columns. -->
+    <div class="table-wrap">
+      <table class="standings">
+        <thead>${header}</thead>
+        <tbody>${rows || '<tr><td class="zero" colspan="5">No players.</td></tr>'}</tbody>
+      </table>
+    </div>
+    ${columns.length ? '' :
+      '<p class="sheet-note">No points came from anything other than objectives.</p>'}
+    <p class="sheet-foot">
+      ${entries} ledger ${entries === 1 ? 'entry' : 'entries'} ·
+      ×n counts the cards or events behind the points ·
+      a dash means nothing scored there
+    </p>`;
+}
+
+/** A zero prints as a dash: an eye scanning the table should skip it. */
+function scoreCell(points, count) {
+  if (!points && !count) return '<td class="num zero">—</td>';
+  return `<td class="num">${points}${count ? `<span class="cnt">×${count}</span>` : ''}</td>`;
+}
+
+function verdict(r) {
+  if (!r.winners.length) return 'No points scored yet.';
+  const best = r.rows[0].total;
+  if (r.winners.length > 1) {
+    // The rules break this by initiative order, which the app does not track.
+    return `Tied on ${best} VP: ${r.winners.join(', ')} — settle it at the table.`;
+  }
+  return r.reachedTarget
+    ? `Winner: ${r.winners[0]} — ${best} VP`
+    : `Leading: ${r.winners[0]} — ${best} of ${r.game.vpTarget} VP`;
+}
+
+function sheetDate(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString([], { dateStyle: 'long', timeStyle: 'short' });
+}
+
+/**
+ * Hands the sheet to the browser's own print-to-PDF.
+ *
+ * <p>No PDF library on the server: the browser already writes one, on every
+ * device at the table, and it is the one place the page's own fonts and layout
+ * are guaranteed to survive.
+ */
+function printStandings() {
+  if (!lastReport) return;
+
+  // Portrait fits the fixed columns; each extra source eats width, so hand the
+  // wide ones to landscape rather than letting the table shrink to nothing.
+  const landscape = lastReport.otherColumns.length > 3;
+  el('pageSetup').textContent =
+    `@page { size: A4 ${landscape ? 'landscape' : 'portrait'}; margin: 12mm; }`;
+
+  // The element itself, not its innerHTML: .sheet carries the report's colour
+  // variables and every selector scoped under it. Copying only the contents
+  // left the text inheriting the dark theme's near-white and every rule falling
+  // back to currentColor -- invisible on paper, and invisible in the on-screen
+  // preview too, because the preview reads the original.
+  const copy = el('reportSheet').cloneNode(true);
+  copy.removeAttribute('id'); // an id may only appear once in the document
+  el('printRoot').replaceChildren(copy);
+
+  // Chrome and Edge name the saved PDF after the document title. If afterprint
+  // never fires the only cost is a stale tab title until the next print.
+  const original = document.title;
+  document.title = `TI4 — ${lastReport.game.name} — final standings`;
+
+  const restore = () => {
+    document.title = original;
+    el('printRoot').replaceChildren();
+    window.removeEventListener('afterprint', restore);
+  };
+  window.addEventListener('afterprint', restore);
+  window.print();
+}
+
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
@@ -714,6 +929,32 @@ function wireUp() {
   });
   el('galleryFilter').addEventListener('input', renderGallery);
   el('galleryClose').addEventListener('click', () => el('galleryDlg').close());
+
+  // End of game: a read-only report, so no confirmation and nothing is written.
+  el('endGameBtn').addEventListener('click', openStandings);
+  el('standingsPrint').addEventListener('click', printStandings);
+  el('standingsClose').addEventListener('click', () => el('standingsDlg').close());
+
+  // Ledger filter. Every control writes to ledgerFilter and re-renders; the
+  // chips' active state is set by renderLedger, so it cannot drift.
+  document.querySelectorAll('#ledgerKinds .chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      ledgerFilter.kind = chip.dataset.kind;
+      renderLedger();
+    });
+  });
+  el('ledgerPlayer').addEventListener('change', (e) => {
+    ledgerFilter.playerId = e.target.value;
+    renderLedger();
+  });
+  el('ledgerFilter').addEventListener('input', (e) => {
+    ledgerFilter.text = e.target.value.trim().toLowerCase();
+    renderLedger();
+  });
+  el('ledgerClear').addEventListener('click', () => {
+    resetLedgerFilter();
+    renderLedger();
+  });
 
   el('historyBtn').addEventListener('click', () => guard(openHistory));
   el('historyFilter').addEventListener('input', renderHistory);

@@ -5,7 +5,7 @@ package ti4.domain;
  *
  * @param actor best available identity: there is no login, so this is the device
  *              address the request came from, which at least separates the
- *              laptop from each phone at the table
+ *              PC from each phone at the table
  */
 public record AuditEntry(
         long id,

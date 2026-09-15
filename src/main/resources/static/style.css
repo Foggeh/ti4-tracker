@@ -17,6 +17,7 @@
      starts ~77%. Keeping 26%-73% clears both with margin, and holds even for
      the longest four-line requirements (Rule Distant Lands, Achieve Supremacy).
 
+
      ratio 1.42 = 500 / (750 * 0.47), the visible slice.
      focus 49%  = 26 / (100 - 47), where object-position puts that slice. */
   --card-crop-ratio: 1.42;
@@ -145,7 +146,8 @@ main { padding: 18px; max-width: 1100px; margin: 0 auto; display: grid; gap: 18p
 .player-card:hover .player-remove { color: var(--muted); }
 .player-remove:hover { border-color: var(--p-red); color: var(--p-red); }
 
-/* Taken colours stay listed but unselectable, rather than vanishing. */
+/* Taken colours stay listed but unselectable, rather than vanishing.
+ Games were odd when all players could be a singular colour */
 dialog option:disabled { color: #4a525e; }
 .player-card .name { font-weight: 600; }
 .player-card .faction { font-size: 12px; color: var(--muted); }
@@ -608,4 +610,163 @@ dialog menu {
   .gallery-dlg { width: 100vw; height: 100vh; border-radius: 0; }
   .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
   .card-preview { max-width: 200px; }
+}
+
+/* --- ledger filter --------------------------------------------------------- */
+
+.ledger-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 10px;
+}
+.kind-chips { display: flex; gap: 6px; }
+.ledger-filter input[type="search"] { flex: 1; min-width: 150px; }
+#ledgerCount { margin-left: auto; white-space: nowrap; }
+
+/* --- end-of-game report ----------------------------------------------------- */
+
+.head-spacer { flex: 1; }
+
+.sheet-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px;
+  background: #0a0d12;
+}
+
+/* Deliberately paper-white inside the dark app: this is a preview of the page
+   that comes out of the printer, so it should not be dressed as a UI panel. */
+.sheet {
+  --ink: #16202b;
+  --ink-soft: #5c6a78;
+  --rule: #d2d9e0;
+
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 30px 34px;
+  background: #fff;
+  color: var(--ink);
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.sheet-head h2 { margin: 0 0 4px; font-size: 21px; letter-spacing: -.01em; }
+.sheet-sub { margin: 0; color: var(--ink-soft); font-size: 12.5px; }
+
+.sheet-verdict {
+  margin: 18px 0 14px;
+  padding: 9px 12px;
+  border-left: 3px solid var(--ink);
+  background: #f2f5f8;
+  font-weight: 600;
+}
+
+.sheet-note, .sheet-foot {
+  margin: 14px 0 0;
+  color: var(--ink-soft);
+  font-size: 11.5px;
+}
+
+.table-wrap { overflow-x: auto; }
+
+table.standings { width: 100%; border-collapse: collapse; }
+
+table.standings th,
+table.standings td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: baseline;
+}
+
+table.standings thead th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--ink-soft);
+  border-bottom: 1.5px solid var(--ink);
+}
+
+/* Source names are card titles and can be long; let them wrap rather than
+   forcing the table wider than the page. */
+table.standings th.src { max-width: 96px; white-space: normal; }
+
+table.standings .num { text-align: right; font-variant-numeric: tabular-nums; }
+table.standings .rank { color: var(--ink-soft); width: 1%; }
+table.standings .total { font-weight: 700; font-size: 15px; }
+table.standings .zero { color: #b9c2cb; }
+table.standings .cnt { color: var(--ink-soft); font-size: 10.5px; margin-left: 3px; }
+table.standings tr.top { background: #fbf6e6; }
+
+table.standings .who { white-space: nowrap; }
+.sheet .pname { font-weight: 600; }
+.sheet .pfaction { color: var(--ink-soft); font-size: 12px; margin-left: 6px; }
+
+.sheet .dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 7px;
+  border: 1px solid rgba(0, 0, 0, .25);
+  background: transparent;
+}
+.sheet .d-blue   { background: var(--p-blue); }
+.sheet .d-green  { background: var(--p-green); }
+.sheet .d-red    { background: var(--p-red); }
+.sheet .d-yellow { background: var(--p-yellow); }
+.sheet .d-purple { background: var(--p-purple); }
+.sheet .d-black  { background: var(--p-black); }
+.sheet .d-orange { background: var(--p-orange); }
+.sheet .d-pink   { background: var(--p-pink); }
+
+#printRoot { display: none; }
+
+/* --- print ------------------------------------------------------------------ */
+
+@media print {
+  /* Everything but the copied sheet is hidden, so the modal dialog -- whose
+     print behaviour differs between engines -- never reaches the page. */
+  body > *:not(#printRoot) { display: none !important; }
+
+  #printRoot { display: block !important; }
+
+  body { background: #fff; }
+
+  #printRoot .sheet {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    font-size: 11pt;
+
+    /* Screen greys are too light on paper: a 1px hairline at #d2d9e0 prints as
+       almost nothing, and the small print goes with it. Darken both for ink. */
+    --rule: #8c98a4;
+    --ink-soft: #46525e;
+  }
+
+  /* Points, not pixels: a printer's pixel is a third of a screen one. */
+  #printRoot table.standings th,
+  #printRoot table.standings td { border-bottom: .5pt solid var(--rule); }
+  #printRoot table.standings thead th { border-bottom: 1.2pt solid var(--ink); }
+  #printRoot table.standings .zero { color: #97a2ad; }
+
+  /* Colour dots and the leader row carry meaning, so keep them in the PDF. */
+  #printRoot * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* A scroll box would clip the columns it cannot show on paper. */
+  #printRoot .table-wrap { overflow: visible; }
+
+  table.standings { page-break-inside: avoid; }
+  table.standings thead { display: table-header-group; }
+}
+
+@media (max-width: 560px) {
+  .ledger-filter input[type="search"] { min-width: 120px; }
+  #ledgerCount { margin-left: 0; }
+  .sheet-scroll { padding: 0; }
+  .sheet { border-radius: 0; padding: 18px 14px; }
 }

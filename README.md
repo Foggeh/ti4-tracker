@@ -1,8 +1,8 @@
 # TI4 Objective Tracker
 
-A small scoring aid for Twilight Imperium 4th Edition. Runs a local web server on
-the game laptop; anyone at the table can open it on a phone or tablet on the same
-wifi.
+A small scoring aid for Twilight Imperium 4th Edition purely for personal use. 
+Runs a local web server on the game PC; anyone at the table can open it on a 
+phone or tablet on the same Wi-Fi.
 
 ## What it does
 
@@ -10,6 +10,9 @@ wifi.
 - Tap a player against a revealed objective to score it
 - Add ad-hoc points with a label, for secret objectives and everything else
 - Live running totals per player, with a leader highlight
+- Filter the ledger by player, by kind, or by card name
+- **End of game** prints a standings sheet: totals split by where the points
+  came from, saved as a PDF through the browser's own print dialog
 
 ## Stack
 
@@ -24,74 +27,63 @@ wifi.
 
 ## Design decisions
 
-**Spring Boot 4.1, not 3.x.** The 3.5 line's free support ended 30 June 2026, so
-starting on 3.x would mean starting unsupported. 4.1 covers Java 17–26.
+**Spring Boot 4.1**  4.1 covers Java 17–26 and 21 was my weapon of choice
 
-**JDBC, not JPA.** Hibernate has no officially supported SQLite dialect — only
-community ones — so `spring-boot-starter-data-jpa` is the awkward path here
-rather than the easy one. `JdbcClient` plus an explicit `schema.sql` keeps the
-SQL visible and avoids the dialect problem entirely.
+**JDBC, not JPA.** `JdbcClient` plus an explicit `schema.sql` keeps the
+SQL visible and avoids the dialect problem entirely as I don't think that Hibernate
+supports SQLite's dialect outside some odd community versions
 
 **Connection pool of one.** SQLite serialises writers. With several people
 tapping at once, a bigger pool produces `SQLITE_BUSY` errors rather than
-throughput, so `spring.datasource.hikari.maximum-pool-size=1`.
+throughput, so `spring.datasource.hikari.maximum-pool-size=1`. 
 
-**JDK 21 pinned explicitly.** This machine has Oracle JDK 17 on `PATH` and
-Adoptium JDK 21 at `JAVA_HOME`. The build uses `JAVA_HOME` so there is no
-ambiguity, and no need to change system environment variables.
+**JDK 21 pinned explicitly.** My machine has Adoptium JDK 21 at `JAVA_HOME`. 
+The build uses `JAVA_HOME` so there is no ambiguity, and no need to change 
+system environment variables.
 
 **Requests are form-encoded, responses are JSON.** Form encoding needs no
-request DTO per endpoint for an app this small.
+request DTO per endpoint as the app is fairly small.
 
 **Points are an append-only ledger.** The `score` table holds one row per
 scoring event, not a running total. A player's score is a `SUM` over their rows,
 so every point is attributable and any mistake is fixed by deleting one row
-rather than reverse-engineering a total.
+rather than reverse-engineering a total. Gives me a better option if someone
+enters something wrong, then it's just that row that goes and the recalculation
+picks up the changes
 
 **Objectives are data, not code** — see `data/objectives-seed.csv`. Fixing a
 wrong requirement or adding a homebrew card is a one-line edit, no recompile.
-The seeder only runs when the table is empty, so it never clobbers cards you
+Massive room for homebrewers, will do more on this when I check what the 
+community has cooked up and what looks table-ready.
+The seeder only runs when the table is empty, so it never clobbers cards
 added in the app.
 
 ## Objective data accuracy
 
 `data/objectives-seed.csv` carries base-game and Prophecy of Kings objectives
-**drafted from memory and not yet verified against physical cards.** Point values
-and names are probably right; requirement wording and the exact base/PoK split
-are the likeliest errors. Please spot-check it. The app logs a reminder on first
-boot.
 
-**Thunder's Edge adds no new public objectives**, confirmed against the physical
-expansion, so the 40 base + PoK cards are the complete set. Nothing to add for
-it. (It does add factions, worlds, Galactic Events and the Twilight's Fall mode,
-none of which this app models.)
+**Thunder's Edge added no new public objectives** so the 40 base + PoK cards are 
+the complete set. Factions themselves are pretty much the only thing I put inside
 
 **Reveal objective → Card not listed…** stays available for homebrew cards, and
-is also how you attach an image to a card that has none.
+is also how I can attach an image to a card that has none.
 
 ## Card images
 
 Drop card scans in `data/images/` and put the filename in the objective's `image`
 field. They are served straight off disk, so a new image needs no rebuild.
 
-They are **not** committed — that artwork is Fantasy Flight Games' copyright, and
+The artwork on all cards is Fantasy Flight Games' copyright, and
 a public GitHub repo is a different proposition from a folder on your own
-machine. `.gitignore` keeps them local.
+machine. `.gitignore` keeps them local due to possible legal issues regarding
+copyright laws.
 
 ## Running it
 
 Easiest is the green run arrow on `Ti4TrackerApplication` in IntelliJ, or the
 Maven panel's `spring-boot:run`.
 
-From a terminal, there is no `mvn` on PATH -- IntelliJ's bundled Maven 3.9.16 is
-used instead:
-
-```
-set "JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.2.13-hotspot"
-"C:\Program Files\JetBrains\IntelliJ IDEA 2026.2.1\plugins\maven-plugin\lib\maven3\bin\mvn.cmd" spring-boot:run
-```
-
-Then open <http://localhost:8080>. Other devices at the table use the laptop's
+Then open <http://localhost:8080>. Other devices at the table use the PC's
 LAN address -- currently `http://192.168.100.9:8080`. Windows Firewall may need
 to allow inbound 8080 the first time another device connects.
 
@@ -139,6 +131,7 @@ Responses are JSON. Request bodies are `application/x-www-form-urlencoded`.
 | `POST` | `/api/points/delete` | Remove a ledger row — `id` |
 | `GET` | `/api/factions` | Faction list for the add-player dropdown |
 | `GET` | `/api/point-sources` | Label options, seeded plus learned from use |
+| `GET` | `/api/standings?game=<id>` | End-of-game report, read-only |
 | `GET` | `/api/audit` | History — optional `game`, `limit` (default 300, max 2000) |
 
 ## History
@@ -153,37 +146,59 @@ point is that the record outlives the row it describes — a cascade would delet
 the evidence along with the player.
 
 There is no login, so the recorded actor is the requesting device's address.
-Requests from the game laptop show as "game laptop"; anything else shows its LAN
+Requests from the game PC show as "game PC"; anything else shows its LAN
 address, which is what distinguishes one phone at the table from another.
 
 Audit writes never throw: losing a history line is bad, losing someone's score
 because the history write failed would be worse. Lines also go to the
 application log, so the trail survives the database file being replaced.
 
-Note that catalogue changes (adding a card, setting an image) are not tied to a
-game, so they only appear with **this game only** unchecked.
+
+## End-of-game report
+
+**End of game** opens the standings as a printable sheet. It is **read-only** —
+it reports the game, it does not end it — so it can also be opened mid-game as a
+scoreboard without any "are you sure" weight.
+
+Each total is split into public objectives, secret objectives, and **one column
+per other source that was actually scored**. A source nobody claimed is absent
+entirely: no empty Shard of the Throne column on the page. Columns appear in the
+order the sources were first scored, and ×n next to a number is how many cards
+or events are behind it.
+
+The numbers come from the same ledger the screen renders, via
+`GET /api/standings`, so the report and the running totals cannot drift apart.
+
+**PDF** is the browser's own print-to-PDF rather than a library on the server.
+It writes a real PDF on every device at the table, needs no dependency, and is
+the one place the page's own layout is guaranteed to survive. The sheet is copied
+into a hidden `#printRoot` first and the print stylesheet hides everything else,
+which keeps a modal `<dialog>` — whose printing behaviour differs by engine —
+out of the output. Wide reports switch to landscape, and the document title is
+set so Chrome names the saved file after the game.
 
 ## Scoring rules encoded
 
 - Public objectives: Stage I = 1 VP, Stage II = 2 VP, taken from the card
-- Secret objectives: entered manually, since they are hidden information
+- Secret objectives: entered manually, since they are hidden information(always 1 VP)
 - The secret cap (3, or 4 with The Obsidian) is a **warning, not a block** — the
   app should never refuse input mid-game and leave you arguing with it
 - Other VP sources — custodians token, Support for the Throne, Imperial, agenda
   outcomes like Shard of the Throne, relics like the Crown of Emphidia — go
   through the same manual entry with a label
 
-## Verified
+## Screenshots
 
-Compiled and run on 2026-08-25. Checked end to end: seeding (40 cards), game and
-player creation, revealing, scoring, toggling a claim off, manual entries,
-totals, and the browser UI updating live. Error paths return real messages
-(400 bad stage, 409 duplicate name, 404 unknown game, 400 missing parameter).
-Data survives a restart.
+The board mid-game. Standings across the top with the leader highlighted, then
+every revealed public objective with its requirement text and a chip per player:
 
-## Not done yet
+![Six player cards showing totals and secret counts, above a grid of revealed objective cards](docs/board.jpg)
 
-- No tests. Everything above was verified by hand, which is not the same thing.
-- No image upload through the browser; you copy files into `data/images/`
-  yourself and type the filename.
-- No "who is winning on tiebreak" logic (TI4 breaks ties by initiative order).
+The score ledger, filterable by player, by kind, or by card name. Every point in
+the game is one row here, so a total is a SUM and a mistake is one deletion:
+
+![Score ledger rows tagged public, secret and other, with filter chips and a search box above](docs/ledger-filter.jpg)
+
+The card gallery, for looking a card up without reaching across the table:
+
+![Grid of public objective cards with stage, points and expansion under each](docs/gallery.jpg)

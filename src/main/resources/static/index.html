@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TI4 Objective Tracker</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Rewritten before printing: the standings table turns landscape once there
+       are enough other-source columns to need the width. -->
+  <style id="pageSetup"></style>
 </head>
 <body>
 
@@ -24,6 +27,7 @@
       <div>
         <span id="vpTarget" class="muted"></span>
         <button id="addPlayerBtn" class="ghost">Add player</button>
+        <button id="endGameBtn" class="ghost">End of game</button>
       </div>
     </div>
     <div id="players" class="players"></div>
@@ -49,7 +53,27 @@
       Secret objectives and anything else — custodians, Support for the Throne,
       agendas, relics — live here.
     </p>
+
+    <!-- Kind as chips rather than a select: four big tap targets beat a dropdown
+         on a phone held over a table. -->
+    <div class="ledger-filter">
+      <div class="kind-chips" id="ledgerKinds" role="group" aria-label="Filter by kind">
+        <button type="button" class="chip on" data-kind="">All</button>
+        <button type="button" class="chip" data-kind="public">Public</button>
+        <button type="button" class="chip" data-kind="secret">Secret</button>
+        <button type="button" class="chip" data-kind="other">Other</button>
+      </div>
+      <select id="ledgerPlayer" aria-label="Filter by player">
+        <option value="">All players</option>
+      </select>
+      <input id="ledgerFilter" type="search" placeholder="Filter by card or label"
+             autocomplete="off">
+      <button type="button" class="ghost tiny" id="ledgerClear" hidden>Clear</button>
+      <span id="ledgerCount" class="muted small"></span>
+    </div>
+
     <ul id="ledger" class="ledger"></ul>
+    <p id="ledgerEmpty" class="empty" hidden>Nothing matches that filter.</p>
   </section>
 
 </main>
@@ -76,6 +100,24 @@
   <div id="historyList" class="history-list"></div>
   <p id="historyEmpty" class="empty" hidden>Nothing recorded yet.</p>
 </dialog>
+
+<dialog id="standingsDlg" class="gallery-dlg report-dlg">
+  <div class="gallery-head">
+    <strong>Final standings</strong>
+    <span id="standingsNote" class="muted small"></span>
+    <span class="head-spacer"></span>
+    <button type="button" class="primary" id="standingsPrint">Save as PDF</button>
+    <button type="button" class="ghost" id="standingsClose">Close</button>
+  </div>
+  <div class="sheet-scroll">
+    <div id="reportSheet" class="sheet"></div>
+  </div>
+</dialog>
+
+<!-- The sheet is copied here just before printing. The print stylesheet hides
+     everything else on the page, which keeps a modal <dialog> -- whose printing
+     behaviour differs by engine -- out of the output entirely. -->
+<div id="printRoot" aria-hidden="true"></div>
 
 <dialog id="galleryDlg" class="gallery-dlg">
   <div class="gallery-head">
